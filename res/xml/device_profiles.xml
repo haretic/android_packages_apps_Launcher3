@@ -106,6 +106,22 @@
         launcher:defaultLayoutId="@xml/default_workspace_4x5"
         launcher:deviceCategory="phone|multi_display" >
 
+        <!-- Rabbit R1 (480x640 panel) at density 186: 4:3 and too short for five
+             rows of 65dp icons, which scaled the icons and clipped their labels. -->
+        <display-option
+            launcher:name="Rabbit R1"
+            launcher:minWidthDps="413"
+            launcher:minHeightDps="498"
+            launcher:iconImageSize="52"
+            launcher:iconTextSize="13.0"
+            launcher:allAppsIconSize="52"
+            launcher:allAppsIconTextSize="13.0"
+            launcher:allAppsBorderSpace="16"
+            launcher:allAppsCellHeight="96"
+            launcher:startAlignTaskbar="true"
+            launcher:startAlignTaskbarLandscape="true"
+            launcher:canBeDefault="true" />
+
         <display-option
             launcher:name="Short Stubby"
             launcher:minWidthDps="275"
