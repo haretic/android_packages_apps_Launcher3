@@ -190,7 +190,14 @@ public class ShortcutAndWidgetContainer extends ViewGroup implements FolderIcon.
                     : mContainerType == WORKSPACE
                             ? dp.getWorkspaceProfile().getWorkspaceCellPaddingXPx()
                             : (int) (dp.getWorkspaceProfile().getEdgeMarginPx() / 2f);
-            child.setPadding(cellPaddingX, cellPaddingY, cellPaddingX, 0);
+            if (WheelHome.enabled(getContext())
+                    && dp.inv.numColumns == 1
+                    && child instanceof BubbleTextView) {
+                int inset = getResources().getDimensionPixelSize(R.dimen.r1_list_row_padding);
+                child.setPadding(inset, 0, inset, 0);
+            } else {
+                child.setPadding(cellPaddingX, cellPaddingY, cellPaddingX, 0);
+            }
         }
         int childWidthMeasureSpec = MeasureSpec.makeMeasureSpec(lp.width, MeasureSpec.EXACTLY);
         int childheightMeasureSpec = MeasureSpec.makeMeasureSpec(lp.height, MeasureSpec.EXACTLY);

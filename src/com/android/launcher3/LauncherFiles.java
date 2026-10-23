@@ -34,6 +34,10 @@ public class LauncherFiles {
     public static final String LAUNCHER_16_BY_8_DB = "launcher_16_by_8.db";
     public static final String LAUNCHER_22_BY_11_DB = "launcher_22_by_11.db";
 
+    public static final String R1_LIST_1_DB = "launcher_r1_list_1.db";
+    public static final String R1_LIST_2_DB = "launcher_r1_list_2.db";
+    public static final String R1_LIST_3_DB = "launcher_r1_list_3.db";
+
     public static final String BACKUP_DB = "backup.db";
     public static final String SHARED_PREFERENCES_KEY = "com.android.launcher3.prefs";
     public static final String MANAGED_USER_PREFERENCES_KEY =
@@ -44,25 +48,30 @@ public class LauncherFiles {
     public static final String WIDGET_PREVIEWS_DB = "widgetpreviews.db";
     public static final String APP_ICONS_DB = "app_icons.db";
 
-    public static final List<String> GRID_DB_FILES = Collections.unmodifiableList(Arrays.asList(
-            LAUNCHER_DB,
-            LAUNCHER_5_BY_8_DB,
-            LAUNCHER_5_BY_7_DB,
-            LAUNCHER_6_BY_6_DB,
-            LAUNCHER_6_BY_5_DB,
-            LAUNCHER_4_BY_5_DB,
-            LAUNCHER_4_BY_6_DB,
-            LAUNCHER_5_BY_6_DB,
-            LAUNCHER_4_BY_4_DB,
-            LAUNCHER_3_BY_3_DB,
-            LAUNCHER_2_BY_2_DB,
-            LAUNCHER_7_BY_3_DB,
-            LAUNCHER_8_BY_3_DB,
-            LAUNCHER_10_BY_5_DB,
-            LAUNCHER_11_BY_5_DB,
-            LAUNCHER_13_BY_6_DB,
-            LAUNCHER_16_BY_8_DB,
-            LAUNCHER_22_BY_11_DB));
+    public static final List<String> GRID_DB_FILES =
+            Collections.unmodifiableList(
+                    Arrays.asList(
+                            LAUNCHER_DB,
+                            LAUNCHER_5_BY_8_DB,
+                            LAUNCHER_5_BY_7_DB,
+                            LAUNCHER_6_BY_6_DB,
+                            LAUNCHER_6_BY_5_DB,
+                            LAUNCHER_4_BY_5_DB,
+                            LAUNCHER_4_BY_6_DB,
+                            LAUNCHER_5_BY_6_DB,
+                            LAUNCHER_4_BY_4_DB,
+                            LAUNCHER_3_BY_3_DB,
+                            LAUNCHER_2_BY_2_DB,
+                            LAUNCHER_7_BY_3_DB,
+                            LAUNCHER_8_BY_3_DB,
+                            LAUNCHER_10_BY_5_DB,
+                            LAUNCHER_11_BY_5_DB,
+                            LAUNCHER_13_BY_6_DB,
+                            LAUNCHER_16_BY_8_DB,
+                            LAUNCHER_22_BY_11_DB,
+                            R1_LIST_1_DB,
+                            R1_LIST_2_DB,
+                            R1_LIST_3_DB));
 
     public static final List<String> OTHER_FILES = Collections.unmodifiableList(Arrays.asList(
             BACKUP_DB,

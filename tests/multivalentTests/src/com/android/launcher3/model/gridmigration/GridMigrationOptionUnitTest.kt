@@ -27,6 +27,17 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class GridMigrationOptionUnitTest {
 
+    @Test
+    fun wheelListGridsCanMigrateToEachOtherAndBackToStock() {
+        val grids =
+            listOf(1 to 4, 2 to 4, 3 to 3, 4 to 5).map {
+                requireNotNull(GridMigrationOption.from(it.first, it.second))
+            }
+        for (source in grids) for (destination in grids) {
+            org.junit.Assert.assertTrue(source.canMigrate(destination, isAfterRestore = false))
+        }
+    }
+
     /* Here we're going from a phone grid to another phone grid and isAfterRestore is false */
     @Test
     fun canMigrateFrom4x5To5x5NotAfterRestoreShouldReturnTrue() {
