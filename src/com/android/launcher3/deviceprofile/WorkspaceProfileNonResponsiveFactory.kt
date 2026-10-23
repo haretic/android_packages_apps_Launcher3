@@ -180,7 +180,11 @@ object WorkspaceProfileNonResponsiveFactory {
         val desiredWorkspaceHorizontalMarginOriginalPx =
             when {
                 isVerticalLayout -> 0
-                else -> res.getDimensionPixelSize(R.dimen.dynamic_grid_left_right_margin)
+                else ->
+                    res.getDimensionPixelSize(
+                        if (inv.dbFile.startsWith("launcher_r1_list_")) R.dimen.r1_list_row_padding
+                        else R.dimen.dynamic_grid_left_right_margin
+                    )
             }
         var iconDrawablePaddingPx =
             (getNormalizedIconDrawablePadding(iconSizePx, iconDrawablePaddingOriginalPx) *
@@ -203,10 +207,18 @@ object WorkspaceProfileNonResponsiveFactory {
             cellHeightPx -= (iconDrawablePaddingPx - cellPaddingY)
             iconDrawablePaddingPx = cellPaddingY
         }
-        val edgeMarginPx = res.getDimensionPixelSize(R.dimen.dynamic_grid_edge_margin)
+        val edgeMarginPx =
+            res.getDimensionPixelSize(
+                if (inv.dbFile.startsWith("launcher_r1_list_")) R.dimen.r1_list_row_padding
+                else R.dimen.dynamic_grid_edge_margin
+            )
         val desiredWorkspaceHorizontalMarginPx = desiredWorkspaceHorizontalMarginOriginalPx
         val workspacePageIndicatorHeight =
-            res.getDimensionPixelSize(R.dimen.workspace_page_indicator_height)
+            res.getDimensionPixelSize(
+                if (inv.dbFile.startsWith("launcher_r1_list_"))
+                    R.dimen.r1_workspace_page_indicator_height
+                else R.dimen.workspace_page_indicator_height
+            )
         val workspacePageIndicatorOverlapWorkspace =
             res.getDimensionPixelSize(R.dimen.workspace_page_indicator_overlap_workspace)
         val noInsetWorkspacePadding =

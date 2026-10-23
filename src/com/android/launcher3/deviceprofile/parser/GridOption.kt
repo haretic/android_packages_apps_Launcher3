@@ -27,6 +27,7 @@ import com.android.launcher3.InvariantDeviceProfile
 import com.android.launcher3.InvariantDeviceProfile.DeviceType
 import com.android.launcher3.InvariantDeviceProfile.TYPE_DESKTOP
 import com.android.launcher3.R
+import com.android.launcher3.WheelHome
 import com.android.launcher3.deviceprofile.parser.DeviceTypedMap.parseTypedMap
 import com.android.launcher3.display.LauncherDisplayInfo
 import com.android.launcher3.testing.shared.ResourceUtils.INVALID_RESOURCE_HANDLE
@@ -432,18 +433,24 @@ class GridOption private constructor(ta: TypedArray, displayInfo: LauncherDispla
             filter: (GridOption) -> Boolean = { true },
             mapper: (GridOption, XmlElement) -> T,
         ): List<T> {
-            return context.resources.getXml(R.xml.device_profiles).use { xml ->
-                xml.getRootElement()
-                    .children(TAG_NAME)
-                    .mapNotNull { el ->
-                        val ta = el.obtainAttrs(displayInfo.context, R.styleable.GridDisplayOption)
-                        val option = GridOption(ta, displayInfo)
-                        ta.recycle()
+            return context.resources
+                .getXml(
+                    if (WheelHome.enabled(context)) R.xml.device_profiles_r1
+                    else R.xml.device_profiles
+                )
+                .use { xml ->
+                    xml.getRootElement()
+                        .children(TAG_NAME)
+                        .mapNotNull { el ->
+                            val ta =
+                                el.obtainAttrs(displayInfo.context, R.styleable.GridDisplayOption)
+                            val option = GridOption(ta, displayInfo)
+                            ta.recycle()
 
-                        if (filter.invoke(option)) mapper.invoke(option, el) else null
-                    }
-                    .toList()
-            }
+                            if (filter.invoke(option)) mapper.invoke(option, el) else null
+                        }
+                        .toList()
+                }
         }
 
         @JvmStatic

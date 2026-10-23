@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<resources>
+    <bool name="config_r1ListHome">false</bool>
+    <dimen name="r1_list_row_padding">16dp</dimen>
+    <dimen name="r1_list_row_gap">12dp</dimen>
+    <dimen name="r1_workspace_page_indicator_height">16dp</dimen>
+</resources>
