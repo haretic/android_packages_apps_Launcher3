@@ -773,7 +773,10 @@ public class CellLayout extends ViewGroup {
         // Hotseat icons - remove text
         if (child instanceof BubbleTextView) {
             BubbleTextView bubbleChild = (BubbleTextView) child;
-            bubbleChild.setContainerTextVisibility(mContainerType != HOTSEAT);
+            bubbleChild.setContainerTextVisibility(
+                    mContainerType != HOTSEAT
+                            || (WheelHome.enabled(getContext())
+                                    && mActivity.getDeviceProfile().inv.numColumns == 1));
         }
 
         child.setScaleX(DEFAULT_SCALE);

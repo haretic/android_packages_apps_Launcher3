@@ -47,6 +47,8 @@ sealed class GridMigrationOption(val columns: Int, val rows: Int) {
     private val validDestinations: List<GridMigrationOption>
         get() =
             when (this) {
+                OneByFour,
+                TwoByFour,
                 TwoByTwo,
                 ThreeByThree,
                 FourByFour,
@@ -62,6 +64,8 @@ sealed class GridMigrationOption(val columns: Int, val rows: Int) {
     private val validDestinationsForPhone: List<GridMigrationOption>
         get() =
             listOf(
+                OneByFour,
+                TwoByFour,
                 TwoByTwo,
                 ThreeByThree,
                 FourByFour,
@@ -75,6 +79,10 @@ sealed class GridMigrationOption(val columns: Int, val rows: Int) {
 
     private val validDestinationsForTablet: List<GridMigrationOption>
         get() = listOf(SixByFive)
+
+    data object OneByFour : GridMigrationOption(columns = 1, rows = 4)
+
+    data object TwoByFour : GridMigrationOption(columns = 2, rows = 4)
 
     data object TwoByTwo : GridMigrationOption(columns = 2, rows = 2)
 
@@ -105,6 +113,8 @@ sealed class GridMigrationOption(val columns: Int, val rows: Int) {
          */
         fun from(columns: Int, rows: Int): GridMigrationOption? =
             when {
+                columns == 1 && rows == 4 -> OneByFour
+                columns == 2 && rows == 4 -> TwoByFour
                 columns == 2 && rows == 2 -> TwoByTwo
                 columns == 3 && rows == 3 -> ThreeByThree
                 columns == 4 && rows == 4 -> FourByFour

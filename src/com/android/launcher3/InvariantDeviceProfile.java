@@ -43,9 +43,12 @@ import static com.android.launcher3.util.SimpleBroadcastReceiver.actionsFilter;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
+import android.database.ContentObserver;
 import android.graphics.Point;
 import android.graphics.PointF;
 import android.graphics.Rect;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.Trace;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
@@ -79,6 +82,8 @@ import com.android.launcher3.util.SimpleBroadcastReceiver;
 import com.android.launcher3.util.TaskbarModeUtil;
 import com.android.launcher3.util.WindowBounds;
 import com.android.launcher3.util.window.WindowManagerProxy;
+
+import lineageos.providers.LineageSettings;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -255,6 +260,7 @@ public class InvariantDeviceProfile {
 
     public TaskbarModeUtil taskbarModeUtil;
     private final LooperExecutor mMainExecutor;
+    private final Context mWheelContext;
 
     @Inject
     InvariantDeviceProfile(
@@ -266,6 +272,7 @@ public class InvariantDeviceProfile {
             DaggerSingletonTracker lifeCycle,
             TaskbarModeUtil taskbarModeUtil,
             @Ui final LooperExecutor mainExecutor) {
+        mWheelContext = context;
         mDisplayController = dc;
         mWMProxy = wmProxy;
         this.taskbarModeUtil = taskbarModeUtil;
@@ -323,6 +330,35 @@ public class InvariantDeviceProfile {
                 mMainExecutor, i -> onConfigChanged());
         localeReceiver.register(actionsFilter(Intent.ACTION_LOCALE_CHANGED));
         lifeCycle.addCloseable(localeReceiver);
+        if (context.getResources().getBoolean(R.bool.config_r1ListHome)) {
+            ContentObserver observer =
+                    new ContentObserver(new Handler(Looper.getMainLooper())) {
+                        @Override
+                        public void onChange(boolean selfChange, android.net.Uri uri) {
+                            if (WheelHome.enabled(context)
+                                    && LineageSettings.Secure.getUriFor(
+                                                    LineageSettings.Secure.WHEEL_BUTTON_COLUMNS)
+                                            .equals(uri)) {
+                                setCurrentGrid("r1_list_" + WheelHome.columns(context));
+                            } else {
+                                onConfigChanged();
+                            }
+                        }
+                    };
+            context.getContentResolver()
+                    .registerContentObserver(
+                            LineageSettings.Secure.getUriFor(LineageSettings.Secure.WHEEL_UI),
+                            false,
+                            observer);
+            context.getContentResolver()
+                    .registerContentObserver(
+                            LineageSettings.Secure.getUriFor(
+                                    LineageSettings.Secure.WHEEL_BUTTON_COLUMNS),
+                            false,
+                            observer);
+            lifeCycle.addCloseable(
+                    () -> context.getContentResolver().unregisterContentObserver(observer));
+        }
     }
 
     /**
@@ -341,6 +377,18 @@ public class InvariantDeviceProfile {
     }
 
     private void initGrid(String gridName) {
+        if (mWheelContext.getResources().getBoolean(R.bool.config_r1ListHome)) {
+            android.content.SharedPreferences saved =
+                    mWheelContext.getSharedPreferences("wheel_home", Context.MODE_PRIVATE);
+            if (WheelHome.enabled(mWheelContext)) {
+                if (gridName == null || !gridName.startsWith("r1_list_")) {
+                    saved.edit().putString("stock_grid", gridName).apply();
+                    gridName = "r1_list_" + WheelHome.columns(mWheelContext);
+                }
+            } else if (gridName != null && gridName.startsWith("r1_list_")) {
+                gridName = saved.getString("stock_grid", null);
+            }
+        }
         LauncherDisplayInfo displayInfo = mDisplayController.getInfo();
         List<DisplayOption> allOptions = getPredefinedDeviceProfiles(
                 displayInfo,

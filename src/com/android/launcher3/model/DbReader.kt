@@ -173,7 +173,9 @@ class DbReader(val mDb: SQLiteDatabase, val mTableName: String, val mContext: Co
                         } else {
                             // Assume that the widget be resized down to 2x2
                             entry.minSpanY = 2
-                            entry.minSpanX = entry.minSpanY
+                            entry.minSpanX =
+                                if (com.android.launcher3.WheelHome.enabled(mContext)) 1
+                                else entry.minSpanY
                         }
                     }
 

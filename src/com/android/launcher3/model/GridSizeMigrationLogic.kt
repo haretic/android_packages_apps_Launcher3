@@ -15,6 +15,7 @@
  */
 package com.android.launcher3.model
 
+import android.content.ContentValues
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.graphics.Point
@@ -25,6 +26,7 @@ import com.android.launcher3.LauncherSettings
 import com.android.launcher3.LauncherSettings.Favorites
 import com.android.launcher3.LauncherSettings.Favorites.TABLE_NAME
 import com.android.launcher3.LauncherSettings.Favorites.TMP_TABLE
+import com.android.launcher3.WheelHome
 import com.android.launcher3.dagger.ApplicationContext
 import com.android.launcher3.logging.FileLog
 import com.android.launcher3.logging.StatsLogManager
@@ -240,6 +242,25 @@ constructor(
 
         val placementSolutionHotseat =
             solveHotseatPlacement(destHotseatSize, dstHotseatItems, hotseatToBeAdded)
+        if (WheelHome.enabled(context)) {
+            for (overflow in hotseatToBeAdded) {
+                val values =
+                    ContentValues().apply {
+                        put(Favorites.CONTAINER, Favorites.CONTAINER_DESKTOP)
+                        put(Favorites.SCREEN, 0)
+                        put(Favorites.CELLX, 0)
+                        put(Favorites.CELLY, 0)
+                        put(Favorites.SPANX, 1)
+                        put(Favorites.SPANY, 1)
+                    }
+                srcReader.mDb.update(
+                    srcReader.mTableName,
+                    values,
+                    "${Favorites._ID} = ?",
+                    arrayOf(overflow.id.toString()),
+                )
+            }
+        }
         for (entryToPlace in placementSolutionHotseat) {
             GridSizeMigrationDBController.insertEntryInDb(
                 helper,

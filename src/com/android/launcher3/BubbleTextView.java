@@ -48,7 +48,6 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ObjectAnimator;
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
@@ -434,6 +433,47 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
                     .getIconState().getIconShapeInfo();
         }
 
+        if (WheelHome.enabled(context)
+                && mDeviceProfile.inv.numColumns == 1
+                && (mDisplay == DISPLAY_WORKSPACE
+                        || mDisplay == DISPLAY_ALL_APPS
+                        || mDisplay == DISPLAY_FOLDER)) {
+            mLayoutHorizontal = true;
+            mCenterVertically = false;
+            setGravity(android.view.Gravity.START | android.view.Gravity.CENTER_VERTICAL);
+            setSingleLine(true);
+            setCompoundDrawablePadding(
+                    getResources().getDimensionPixelSize(R.dimen.r1_list_row_gap));
+            if (mDisplay == DISPLAY_WORKSPACE) {
+                float density = getResources().getDisplayMetrics().density;
+                int surface = getContext().getColor(android.R.color.system_neutral1_800);
+                int accent = getContext().getColor(android.R.color.system_accent1_100);
+                android.graphics.drawable.GradientDrawable normal =
+                        new android.graphics.drawable.GradientDrawable();
+                normal.setColor((surface & 0x00ffffff) | 0xdd000000);
+                normal.setCornerRadius(28 * density);
+                android.graphics.drawable.GradientDrawable focused =
+                        new android.graphics.drawable.GradientDrawable();
+                focused.setColor((surface & 0x00ffffff) | 0xdd000000);
+                focused.setCornerRadius(28 * density);
+                focused.setStroke(Math.round(2.4f * density), accent);
+                android.graphics.drawable.StateListDrawable rows =
+                        new android.graphics.drawable.StateListDrawable();
+                rows.addState(new int[] {android.R.attr.state_focused}, focused);
+                rows.addState(new int[] {}, normal);
+                setBackground(
+                        new android.graphics.drawable.InsetDrawable(
+                                new android.graphics.drawable.RippleDrawable(
+                                        android.content.res.ColorStateList.valueOf(
+                                                accent & 0x33ffffff),
+                                        rows,
+                                        null),
+                                0,
+                                Math.round(4 * density),
+                                0,
+                                Math.round(4 * density)));
+            }
+        }
         setEllipsize(TruncateAt.END);
         setAccessibilityDelegate(mActivity.getAccessibilityDelegate());
 
@@ -833,6 +873,9 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
      * Returns true if the touch down at the provided position be ignored
      */
     protected boolean shouldIgnoreTouchDown(MotionEvent event) {
+        if (mLayoutHorizontal
+                && WheelHome.enabled(getContext())
+                && mDeviceProfile.inv.numColumns == 1) return false;
         if (mDisplay == DISPLAY_TASKBAR) {
             // Allow touching within padding on taskbar, given icon sizes are smaller.
             return false;
