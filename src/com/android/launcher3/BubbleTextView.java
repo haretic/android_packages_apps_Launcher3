@@ -450,11 +450,12 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
                 int accent = getContext().getColor(android.R.color.system_accent1_100);
                 android.graphics.drawable.GradientDrawable normal =
                         new android.graphics.drawable.GradientDrawable();
-                normal.setColor((surface & 0x00ffffff) | 0xdd000000);
+                // Solid, so busy wallpapers stay behind the names
+                normal.setColor(surface);
                 normal.setCornerRadius(28 * density);
                 android.graphics.drawable.GradientDrawable focused =
                         new android.graphics.drawable.GradientDrawable();
-                focused.setColor((surface & 0x00ffffff) | 0xdd000000);
+                focused.setColor(surface);
                 focused.setCornerRadius(28 * density);
                 // The wheel's own ring goes round the row where it's on: an outline here too
                 // would be a second

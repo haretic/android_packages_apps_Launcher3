@@ -1115,6 +1115,7 @@ public class Launcher extends StatefulActivity<LauncherState>
         super.onResume();
         mLauncherUiState.setIsResumedActivity(true);
         DragView.removeAllViews(this);
+        WheelHome.startTourOnce(this);
         TraceHelper.INSTANCE.endSection();
     }
 
@@ -1949,6 +1950,21 @@ public class Launcher extends StatefulActivity<LauncherState>
     }
 
     protected void onStateBack() {
+        // Home has no back: there the side button's hold (back, with the wheel UI) opens the
+        // options of what the wheel is on, a tab's or an app's
+        if (mStateManager.getState() == NORMAL && WheelHome.enabled(this)) {
+            final View focused = getWindow().getDecorView().findFocus();
+            if (focused != null && !focused.isInTouchMode()) {
+                if (focused instanceof WheelHomeTabs tabs) {
+                    tabs.showOptions();
+                    return;
+                }
+                if (focused instanceof BubbleTextView && focused.isLongClickable()) {
+                    focused.performLongClick();
+                    return;
+                }
+            }
+        }
         mStateManager.getState().onBackInvoked(this);
     }
 
