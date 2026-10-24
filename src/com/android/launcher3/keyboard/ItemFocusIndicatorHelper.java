@@ -124,6 +124,24 @@ public abstract class ItemFocusIndicatorHelper<T> implements AnimatorUpdateListe
         mShift = 0;
     }
 
+    private int mWheelFocusSeq = -1;
+    private boolean mWheelFocus;
+
+    /**
+     * Whether the wheel UI's focus ring (config_wheelFocus, a framework overlay) is on: the
+     * system draws it round the focused item, this outline would be a second.
+     */
+    private boolean isWheelFocus() {
+        final android.content.res.Resources res = mContainer.getResources();
+        final int seq = res.getConfiguration().seq;
+        if (seq != mWheelFocusSeq) {
+            mWheelFocusSeq = seq;
+            final int id = res.getIdentifier("config_wheelFocus", "bool", "android");
+            mWheelFocus = id != 0 && res.getBoolean(id);
+        }
+        return mWheelFocus;
+    }
+
     protected void setAlpha(float alpha) {
         mAlpha = alpha;
         mPaint.setAlpha((int) (mAlpha * mMaxAlpha));
@@ -151,7 +169,7 @@ public abstract class ItemFocusIndicatorHelper<T> implements AnimatorUpdateListe
      * Draws the indicator on the canvas
      */
     public void draw(Canvas c) {
-        if (mAlpha <= 0) return;
+        if (mAlpha <= 0 || isWheelFocus()) return;
 
         Rect newRect = getDrawRect();
         if (newRect != null) {
