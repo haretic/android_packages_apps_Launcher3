@@ -1,7 +1,10 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 package com.android.launcher3;
 
+import android.content.ActivityNotFoundException;
 import android.content.Context;
+import android.content.Intent;
+import android.provider.Settings;
 
 import lineageos.providers.LineageSettings;
 
@@ -20,6 +23,35 @@ public final class WheelHome {
                 && LineageSettings.Secure.getInt(
                                 context.getContentResolver(), LineageSettings.Secure.WHEEL_HOME, 1)
                         != 0;
+    }
+
+    /** Settings.Secure, set by the tour itself (cat.kenny.r1.wheel.settings) once it showed. */
+    private static final String TOUR_DONE = "r1_wheel_tour_done";
+    private static boolean sTourAsked;
+
+    /**
+     * The wheel tour, the first time home shows with the wheel UI on after setup: what turning,
+     * pressing, holding and double-pressing do.
+     */
+    public static void startTourOnce(Context context) {
+        if (sTourAsked) {
+            return;
+        }
+        sTourAsked = true;
+        if (Settings.Secure.getInt(context.getContentResolver(), TOUR_DONE, 0) != 0
+                || Settings.Secure.getInt(context.getContentResolver(),
+                        Settings.Secure.USER_SETUP_COMPLETE, 0) == 0
+                || LineageSettings.Secure.getInt(context.getContentResolver(),
+                        LineageSettings.Secure.WHEEL_UI, 1) == 0) {
+            return;
+        }
+        try {
+            context.startActivity(new Intent("cat.kenny.r1.wheel.action.TOUR")
+                    .setPackage("cat.kenny.r1.wheel.settings")
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+        } catch (ActivityNotFoundException e) {
+            // Not on this build
+        }
     }
 
     public static int columns(Context context) {
