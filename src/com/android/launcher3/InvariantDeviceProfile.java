@@ -355,6 +355,11 @@ public class InvariantDeviceProfile {
                                     LineageSettings.Secure.WHEEL_BUTTON_COLUMNS),
                             false,
                             observer);
+            context.getContentResolver()
+                    .registerContentObserver(
+                            LineageSettings.Secure.getUriFor(LineageSettings.Secure.WHEEL_HOME),
+                            false,
+                            observer);
             lifeCycle.addCloseable(
                     () -> context.getContentResolver().unregisterContentObserver(observer));
         }
@@ -362,8 +367,10 @@ public class InvariantDeviceProfile {
 
     private void initGrid(String gridName) {
         if (mWheelContext.getResources().getBoolean(R.bool.config_r1ListHome)) {
-            android.content.SharedPreferences saved =
-                    mWheelContext.getSharedPreferences("wheel_home", Context.MODE_PRIVATE);
+            // Device protected: the taskbar sets the grid up before the user first unlocks
+            android.content.SharedPreferences saved = mWheelContext
+                    .createDeviceProtectedStorageContext()
+                    .getSharedPreferences("wheel_home", Context.MODE_PRIVATE);
             if (WheelHome.enabled(mWheelContext)) {
                 if (gridName == null || !gridName.startsWith("r1_list_")) {
                     saved.edit().putString("stock_grid", gridName).apply();
