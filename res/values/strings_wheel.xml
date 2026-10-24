@@ -2,7 +2,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <!-- The wheel home's tabs (WheelHomeTabs): the first tab's name until it's given one -->
-    <string name="wheel_home_tab_first">Apps</string>
+    <string name="wheel_home_tab_first">Home</string>
     <!-- The name of a tab after the first until it's given one -->
     <string name="wheel_home_tab_numbered">Tab <xliff:g id="number" example="2">%1$d</xliff:g></string>
     <string name="wheel_home_tab_rename">Rename</string>

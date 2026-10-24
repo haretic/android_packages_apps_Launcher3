@@ -237,6 +237,10 @@ public class WheelHomeTabs extends View implements Insettable, PagedView.PageSwi
         }
         final boolean shown = shown();
         setVisibility(shown ? VISIBLE : GONE);
+        // The tabs say which page is up: no dots under the list as well
+        if (mWorkspace.getPageIndicator() instanceof View dots) {
+            dots.setVisibility(shown ? INVISIBLE : VISIBLE);
+        }
         if (!shown) {
             return;
         }
@@ -302,7 +306,7 @@ public class WheelHomeTabs extends View implements Insettable, PagedView.PageSwi
     }
 
     /** The current tab's options, as a list the wheel walks. */
-    private void showOptions() {
+    void showOptions() {
         final int page = mWorkspace.getNextPage();
         final boolean empty = isEmpty(page);
         final String[] options = {
