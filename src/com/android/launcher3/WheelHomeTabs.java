@@ -141,6 +141,11 @@ public class WheelHomeTabs extends View implements Insettable, PagedView.PageSwi
         workspace.addPageSwitchListener(this);
         launcher.getStateManager().addStateListener(this);
         getViewTreeObserver().addOnGlobalLayoutListener(this);
+        getViewTreeObserver().addOnTouchModeChangeListener(inTouchMode -> {
+            if (!inTouchMode) {
+                focusScreen(mLauncher.getStateManager().getState());
+            }
+        });
         update();
     }
 
@@ -179,6 +184,42 @@ public class WheelHomeTabs extends View implements Insettable, PagedView.PageSwi
     @Override
     public void onStateTransitionComplete(LauncherState finalState) {
         update();
+        if (!isInTouchMode()) {
+            focusScreen(finalState);
+        }
+    }
+
+    /**
+     * Under the wheel the focus goes with the screen: into all apps as it opens, its first app,
+     * and back home after; else it stays on a row the screen above hides. As the screen
+     * settles, and as the wheel turns after touch, which left nothing focused or the handle.
+     */
+    private void focusScreen(LauncherState state) {
+        if (mLauncher == null) {
+            return;
+        }
+        final View focused = mLauncher.getWindow().getDecorView().findFocus();
+        if (state == LauncherState.ALL_APPS) {
+            final View apps = mLauncher.getAppsView().getActiveRecyclerView();
+            // On an app or in the search field; the sheet's handle and the like don't count
+            if (apps != null && !isInside(focused, apps)
+                    && !(focused instanceof android.widget.EditText)) {
+                apps.requestFocus(View.FOCUS_DOWN);
+            }
+        } else if (state == LauncherState.NORMAL && focused != null
+                && !isInside(focused, mWorkspace) && focused != this) {
+            mWorkspace.restoreDefaultFocus();
+        }
+    }
+
+    private static boolean isInside(View view, View group) {
+        for (View v = view; v != null;
+                v = v.getParent() instanceof View parent ? parent : null) {
+            if (v == group) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
