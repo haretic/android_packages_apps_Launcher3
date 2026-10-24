@@ -456,10 +456,19 @@ public class BubbleTextView extends TextView implements ItemInfoUpdateReceiver,
                         new android.graphics.drawable.GradientDrawable();
                 focused.setColor((surface & 0x00ffffff) | 0xdd000000);
                 focused.setCornerRadius(28 * density);
-                focused.setStroke(Math.round(2.4f * density), accent);
+                // The wheel's own ring goes round the row where it's on: an outline here too
+                // would be a second
+                // Read through the app's resources, which have the framework's overlays
+                final android.content.res.Resources res = getResources();
+                final int wheelFocus = res.getIdentifier("config_wheelFocus", "bool", "android");
+                if (wheelFocus == 0 || !res.getBoolean(wheelFocus)) {
+                    focused.setStroke(Math.round(2.4f * density), accent);
+                }
                 android.graphics.drawable.StateListDrawable rows =
                         new android.graphics.drawable.StateListDrawable();
-                rows.addState(new int[] {android.R.attr.state_focused}, focused);
+                // Focused in the window with the focus, not under the taskbar or a dialog
+                rows.addState(new int[] {android.R.attr.state_focused,
+                        android.R.attr.state_window_focused}, focused);
                 rows.addState(new int[] {}, normal);
                 setBackground(
                         new android.graphics.drawable.InsetDrawable(

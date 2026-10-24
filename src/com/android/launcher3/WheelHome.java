@@ -5,7 +5,10 @@ import android.content.Context;
 
 import lineageos.providers.LineageSettings;
 
-/** Resource opt-in and the same per-user switch used by SystemUI's wheel UI. */
+/**
+ * Resource opt-in and the same per-user switches used by SystemUI's wheel UI: the wheel UI, and
+ * the home screen as its revised part.
+ */
 public final class WheelHome {
     private WheelHome() {}
 
@@ -13,6 +16,9 @@ public final class WheelHome {
         return context.getResources().getBoolean(R.bool.config_r1ListHome)
                 && LineageSettings.Secure.getInt(
                                 context.getContentResolver(), LineageSettings.Secure.WHEEL_UI, 1)
+                        != 0
+                && LineageSettings.Secure.getInt(
+                                context.getContentResolver(), LineageSettings.Secure.WHEEL_HOME, 1)
                         != 0;
     }
 

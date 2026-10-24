@@ -233,7 +233,11 @@ object WorkspaceProfileNonResponsiveFactory {
                 edgeMarginPx = edgeMarginPx,
                 workspacePageIndicatorHeight = workspacePageIndicatorHeight,
                 workspacePageIndicatorOverlapWorkspace = workspacePageIndicatorOverlapWorkspace,
-                workspaceTopPadding = 0,
+                // Room for the wheel home's tabs (WheelHomeTabs) over the list
+                workspaceTopPadding =
+                    if (inv.dbFile.startsWith("launcher_r1_list_"))
+                        res.getDimensionPixelSize(R.dimen.r1_home_tabs_space)
+                    else 0,
                 workspaceBottomPadding = 0,
                 iconSize = iconSizePx,
                 hotseatBarBottomSpacePx = hotseatProfile.barBottomSpacePx,
@@ -296,7 +300,11 @@ object WorkspaceProfileNonResponsiveFactory {
                 ),
             workspaceCellPaddingXPx =
                 res.getDimensionPixelSize(R.dimen.dynamic_grid_cell_padding_x),
-            workspaceTopPadding = 0,
+            // Kept, as the padding is worked out again from it (recalculateWorkspacePadding)
+            workspaceTopPadding =
+                if (inv.dbFile.startsWith("launcher_r1_list_"))
+                    res.getDimensionPixelSize(R.dimen.r1_home_tabs_space)
+                else 0,
             workspaceBottomPadding = 0,
             maxEmptySpace = 0,
             workspacePadding = workspacePadding,
@@ -430,7 +438,11 @@ object WorkspaceProfileNonResponsiveFactory {
                 edgeMarginPx = edgeMarginPx,
                 workspacePageIndicatorHeight = workspacePageIndicatorHeight,
                 workspacePageIndicatorOverlapWorkspace = workspacePageIndicatorOverlapWorkspace,
-                workspaceTopPadding = 0,
+                // Room for the wheel home's tabs (WheelHomeTabs) over the list
+                workspaceTopPadding =
+                    if (inv.dbFile.startsWith("launcher_r1_list_"))
+                        res.getDimensionPixelSize(R.dimen.r1_home_tabs_space)
+                    else 0,
                 workspaceBottomPadding = 0,
                 iconSize = iconSizePx,
                 hotseatBarBottomSpacePx = hotseatProfile.barBottomSpacePx,
@@ -492,7 +504,11 @@ object WorkspaceProfileNonResponsiveFactory {
                 ),
             workspaceCellPaddingXPx =
                 res.getDimensionPixelSize(R.dimen.dynamic_grid_cell_padding_x),
-            workspaceTopPadding = 0,
+            // Kept, as the padding is worked out again from it (recalculateWorkspacePadding)
+            workspaceTopPadding =
+                if (inv.dbFile.startsWith("launcher_r1_list_"))
+                    res.getDimensionPixelSize(R.dimen.r1_home_tabs_space)
+                else 0,
             workspaceBottomPadding = 0,
             maxEmptySpace = 0,
             workspacePadding = workspacePadding,
