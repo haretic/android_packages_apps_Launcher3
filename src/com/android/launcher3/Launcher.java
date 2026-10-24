@@ -1202,6 +1202,9 @@ public class Launcher extends StatefulActivity<LauncherState>
         // Setup Scrim
         mScrimView = findViewById(R.id.scrim_view);
 
+        final WheelHomeTabs wheelTabs = mDragLayer.findViewById(R.id.wheel_home_tabs);
+        wheelTabs.setup(this, mWorkspace);
+
         // Setup the drag controller (drop targets have to be added in reverse order in priority)
         mDropTargetBar.setup(mDragController);
         mAllAppsController.setupViews(mScrimView, mAppsView);

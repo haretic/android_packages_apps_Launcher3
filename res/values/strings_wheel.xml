@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+    <!-- The wheel home's tabs (WheelHomeTabs): the first tab's name until it's given one -->
+    <string name="wheel_home_tab_first">Apps</string>
+    <!-- The name of a tab after the first until it's given one -->
+    <string name="wheel_home_tab_numbered">Tab <xliff:g id="number" example="2">%1$d</xliff:g></string>
+    <string name="wheel_home_tab_rename">Rename</string>
+    <string name="wheel_home_tab_add">Add a tab</string>
+    <string name="wheel_home_tab_remove">Remove tab</string>
+    <!-- A tab can only go once its apps are moved off it -->
+    <string name="wheel_home_tab_remove_not_empty">Move its apps off to remove the tab</string>
+    <string name="wheel_home_tab_added">Hold an app and drag it here to keep the tab</string>
+</resources>

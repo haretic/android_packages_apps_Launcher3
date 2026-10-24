@@ -50,6 +50,13 @@
             android:id="@+id/hotseat"
             layout="@layout/hotseat" />
 
+        <!-- The wheel home's tabs over the list, shown by itself where it applies -->
+        <com.android.launcher3.WheelHomeTabs
+            android:id="@+id/wheel_home_tabs"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:visibility="gone" />
+
         <!-- Keep these behind the workspace so that they are not visible when
          we go into AllApps -->
 

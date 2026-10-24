@@ -5,4 +5,6 @@
     <dimen name="r1_list_row_padding">16dp</dimen>
     <dimen name="r1_list_row_gap">12dp</dimen>
     <dimen name="r1_workspace_page_indicator_height">16dp</dimen>
+    <!-- The tabs' 48dp, 8dp over them and 8dp under -->
+    <dimen name="r1_home_tabs_space">64dp</dimen>
 </resources>
