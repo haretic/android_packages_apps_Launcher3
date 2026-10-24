@@ -17,6 +17,7 @@ package com.android.launcher3.model
 
 import android.content.ContentValues
 import android.content.Context
+import android.database.DatabaseUtils
 import android.database.sqlite.SQLiteDatabase
 import android.graphics.Point
 import android.util.Log
@@ -70,6 +71,18 @@ constructor(
     ) {
 
         if (!GridSizeMigrationDBController.needsToMigrate(srcDeviceState, destDeviceState)) {
+            return
+        }
+        if (
+            isWheelListSwitch(srcDeviceState, destDeviceState) &&
+                DatabaseUtils.queryNumEntries(target.writableDatabase, TABLE_NAME) > 0
+        ) {
+            // The wheel's list and the stock grid are two homes, each kept as it was left:
+            // switching between them carries one over only into a home not laid out yet. A
+            // migration each way would bring the dock's apps back each time, and empty the dock
+            FileLog.d(TAG, "Wheel list switch, keeping ${destDeviceState.dbFile} as it was")
+            destDeviceState.writeToPrefs(context)
+            modelDelegate.gridMigrationComplete(srcDeviceState, destDeviceState)
             return
         }
         val statsLogManager: StatsLogManager = logFactory.create(context)
@@ -164,6 +177,12 @@ constructor(
         }
     }
 
+    private fun isWheelListSwitch(src: DeviceGridState, dest: DeviceGridState): Boolean =
+        isWheelList(src) != isWheelList(dest)
+
+    private fun isWheelList(state: DeviceGridState): Boolean =
+        state.dbFile?.startsWith("launcher_r1_list_") == true
+
     /** Handles hotseat migration. */
     @VisibleForTesting
     fun migrateHotseat(
@@ -237,6 +256,16 @@ constructor(
         }
 
         idsInUse.addAll(dstHotseatItems.map { entry: DbEntry -> entry.id })
+
+        if (WheelHome.enabled(context)) {
+            // The list has no dock: the dock's apps come over to the list, but not again each
+            // time the grid changes back, nor an app the list already has
+            val inList = destReader.loadAllWorkspaceEntries().toMutableList()
+            hotseatToBeAdded.removeAll { entry -> inList.remove(entry) }
+            if (hotseatToBeAdded.isEmpty()) {
+                return
+            }
+        }
 
         hotseatToBeAdded.sort()
 
