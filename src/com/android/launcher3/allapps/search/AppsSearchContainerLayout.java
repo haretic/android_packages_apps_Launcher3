@@ -38,6 +38,7 @@ import com.android.launcher3.ExtendedEditText;
 import com.android.launcher3.Insettable;
 import com.android.launcher3.R;
 import com.android.launcher3.Utilities;
+import com.android.launcher3.WheelHome;
 import com.android.launcher3.allapps.ActivityAllAppsContainerView;
 import com.android.launcher3.allapps.AllAppsStore;
 import com.android.launcher3.allapps.BaseAllAppsAdapter.AdapterItem;
@@ -114,6 +115,11 @@ public class AppsSearchContainerLayout extends ExtendedEditText
         int iconPadding = cellWidth - iconVisibleSize;
 
         int myWidth = rowWidth - iconPadding + getPaddingLeft() + getPaddingRight();
+        // The wheel's list drawer has a row an app, as wide as the list
+        if (WheelHome.enabled(getContext()) && dp.inv.dbFile != null
+                && dp.inv.dbFile.startsWith("launcher_r1_list_")) {
+            myWidth = rowWidth + getPaddingLeft() + getPaddingRight();
+        }
         super.onMeasure(makeMeasureSpec(myWidth, EXACTLY), heightMeasureSpec);
     }
 
