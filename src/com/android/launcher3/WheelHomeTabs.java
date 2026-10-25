@@ -18,12 +18,14 @@ import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.Toast;
 
+import com.android.launcher3.model.data.ItemInfo;
 import com.android.launcher3.statemanager.StateManager.StateListener;
 
 /**
@@ -226,9 +228,22 @@ public class WheelHomeTabs extends View implements Insettable, PagedView.PageSwi
     public void onGlobalLayout() {
         // Pages come and go as apps are moved; the tabs follow on the next frame, as views
         // added while the layout is still being handed out are never measured
-        if (mWorkspace != null && mWorkspace.getPageCount() != mPages) {
+        if (mWorkspace != null && (mWorkspace.getPageCount() != mPages || namesChanged())) {
             post(this::update);
         }
+    }
+
+    /** Whether an app moved, and with it a tab named after its first app. */
+    private boolean namesChanged() {
+        if (mNames == null || !shown()) {
+            return false;
+        }
+        for (int i = 0; i < mNames.length && i < mWorkspace.getPageCount(); i++) {
+            if (!mNames[i].equals(name(i))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void update() {
@@ -257,15 +272,39 @@ public class WheelHomeTabs extends View implements Insettable, PagedView.PageSwi
         invalidate();
     }
 
-    /** The tab's name: the one given it, else the first one Apps and the others numbered. */
+    /**
+     * The tab's name: the one given it, else Home for the first and for the others their first
+     * app's, which says what is on them; numbered while empty.
+     */
     private String name(int page) {
         final String saved = mPrefs.getString(NAME + mWorkspace.getScreenIdForPageIndex(page), null);
         if (saved != null && !saved.isEmpty()) {
             return saved;
         }
-        return page == 0
-                ? getContext().getString(R.string.wheel_home_tab_first)
+        if (page == 0) {
+            return getContext().getString(R.string.wheel_home_tab_first);
+        }
+        final CharSequence first = firstApp(page);
+        return first != null ? first.toString()
                 : getContext().getString(R.string.wheel_home_tab_numbered, page + 1);
+    }
+
+    /** The name of the topmost app on a page, or null. */
+    private CharSequence firstApp(int page) {
+        if (!(mWorkspace.getPageAt(page) instanceof CellLayout cells)) {
+            return null;
+        }
+        final ViewGroup items = cells.getShortcutsAndWidgets();
+        ItemInfo top = null;
+        for (int i = 0; i < items.getChildCount(); i++) {
+            if (items.getChildAt(i).getTag() instanceof ItemInfo info
+                    && !TextUtils.isEmpty(info.title)
+                    && (top == null || info.cellY < top.cellY
+                            || info.cellY == top.cellY && info.cellX < top.cellX)) {
+                top = info;
+            }
+        }
+        return top == null ? null : top.title;
     }
 
     @Override

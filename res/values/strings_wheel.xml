@@ -3,7 +3,7 @@
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <!-- The wheel home's tabs (WheelHomeTabs): the first tab's name until it's given one -->
     <string name="wheel_home_tab_first">Home</string>
-    <!-- The name of a tab after the first until it's given one -->
+    <!-- The name of an empty tab after the first until it is given one; others take their first app's -->
     <string name="wheel_home_tab_numbered">Tab <xliff:g id="number" example="2">%1$d</xliff:g></string>
     <string name="wheel_home_tab_rename">Rename</string>
     <string name="wheel_home_tab_add">Add a tab</string>
