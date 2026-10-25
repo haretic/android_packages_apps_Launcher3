@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 package com.android.launcher3;
 
+import android.animation.ValueAnimator;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -51,6 +52,14 @@ public class WheelHomeTabs extends View implements Insettable, PagedView.PageSwi
     private final Paint mText = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint mPill = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final RectF mPillRect = new RectF();
+    /**
+     * The tabs' left edges and widths, by layoutTabs: as wide as each other while that leaves
+     * every name whole, else as wide as their names, the strip scrolling the current one in.
+     */
+    private float[] mTabX = new float[0];
+    private float[] mTabWidth = new float[0];
+    private float mTabsWidth;
+    private ValueAnimator mScroller;
     /** The tab a long press is on, or -1 for the current one. */
     private int mTouchedTab = -1;
     /** The hold that opened the options, so its release doesn't switch the tab too. */
@@ -72,6 +81,9 @@ public class WheelHomeTabs extends View implements Insettable, PagedView.PageSwi
         background.setCornerRadius(dp(24));
         background.setColor(context.getColor(android.R.color.system_surface_container_high_dark));
         setBackground(background);
+        // A name cut off at the edge fades out: there are more tabs that way
+        setHorizontalFadingEdgeEnabled(true);
+        setFadingEdgeLength(dp(24));
         setFocusable(true);
         setClickable(true);
         setOnClickListener(v -> {
@@ -98,29 +110,106 @@ public class WheelHomeTabs extends View implements Insettable, PagedView.PageSwi
 
     /** The tab under x, -1 for none. */
     private int tabAt(float x) {
-        final int count = mNames.length;
-        if (count == 0) {
-            return -1;
+        final float at = x + getScrollX();
+        for (int i = 0; i < mTabX.length; i++) {
+            if (at < mTabX[i] + mTabWidth[i] || i == mTabX.length - 1) {
+                return i;
+            }
         }
-        final float width = (getWidth() - getPaddingLeft() - getPaddingRight()) / (float) count;
-        return Math.max(0, Math.min(count - 1, (int) ((x - getPaddingLeft()) / width)));
+        return -1;
+    }
+
+    /** Lays the tabs out along the strip, see mTabX, and scrolls the current one into it. */
+    private void layoutTabs(boolean animate) {
+        final int count = mNames.length;
+        final float room = getWidth() - getPaddingLeft() - getPaddingRight();
+        mTabX = new float[count];
+        mTabWidth = new float[count];
+        if (count == 0 || room <= 0) {
+            mTabsWidth = 0;
+            return;
+        }
+        // A name no longer than most of the strip, a tab a little wider than its name
+        final float pad = dp(16);
+        float widest = 0;
+        float total = 0;
+        for (int i = 0; i < count; i++) {
+            mTabWidth[i] = Math.min(room * 0.6f, mText.measureText(mNames[i]) + 2 * pad);
+            widest = Math.max(widest, mTabWidth[i]);
+            total += mTabWidth[i];
+        }
+        if (widest * count <= room) {
+            java.util.Arrays.fill(mTabWidth, room / count);
+            total = room;
+        } else if (total < room) {
+            for (int i = 0; i < count; i++) {
+                mTabWidth[i] += (room - total) / count;
+            }
+            total = room;
+        }
+        float x = getPaddingLeft();
+        for (int i = 0; i < count; i++) {
+            mTabX[i] = x;
+            x += mTabWidth[i];
+        }
+        mTabsWidth = total;
+        scrollToCurrent(animate);
+    }
+
+    /** Scrolls the strip as little as brings the current tab wholly into it. */
+    private void scrollToCurrent(boolean animate) {
+        if (mCurrent < 0 || mCurrent >= mTabX.length) {
+            return;
+        }
+        final float room = getWidth() - getPaddingLeft() - getPaddingRight();
+        final float max = Math.max(0, mTabsWidth - room);
+        float target = getScrollX();
+        final float start = mTabX[mCurrent] - getPaddingLeft();
+        final float end = start + mTabWidth[mCurrent];
+        if (start < target) {
+            target = start;
+        } else if (end > target + room) {
+            target = end - room;
+        }
+        final int to = Math.round(Math.max(0, Math.min(max, target)));
+        if (mScroller != null) {
+            mScroller.cancel();
+        }
+        if (!animate || to == getScrollX()) {
+            scrollTo(to, 0);
+            return;
+        }
+        mScroller = ValueAnimator.ofInt(getScrollX(), to);
+        mScroller.setDuration(200);
+        mScroller.addUpdateListener(a -> scrollTo((int) a.getAnimatedValue(), 0));
+        mScroller.start();
+    }
+
+    @Override
+    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        super.onSizeChanged(w, h, oldw, oldh);
+        layoutTabs(false);
+    }
+
+    @Override
+    protected int computeHorizontalScrollRange() {
+        return Math.round(mTabsWidth) + getPaddingLeft() + getPaddingRight();
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
-        final int count = mNames.length;
+        final int count = Math.min(mNames.length, mTabX.length);
         if (count == 0) {
             return;
         }
-        final float left = getPaddingLeft();
         final float top = getPaddingTop();
         final float bottom = getHeight() - getPaddingBottom();
-        final float width = (getWidth() - left - getPaddingRight()) / count;
         final float baseline = (top + bottom) / 2 - (mText.ascent() + mText.descent()) / 2;
         final int onPrimary = getContext().getColor(android.R.color.system_on_primary_dark);
         final int onSurface = getContext().getColor(android.R.color.system_on_surface_dark);
         for (int i = 0; i < count; i++) {
-            final float x = left + i * width;
+            final float x = mTabX[i];
+            final float width = mTabWidth[i];
             if (i == mCurrent) {
                 mPillRect.set(x, top, x + width, bottom);
                 canvas.drawRoundRect(mPillRect, dp(20), dp(20), mPill);
@@ -266,8 +355,10 @@ public class WheelHomeTabs extends View implements Insettable, PagedView.PageSwi
         for (int i = 0; i < pages; i++) {
             names[i] = name(i);
         }
+        final boolean moved = current != mCurrent;
         mNames = names;
         mCurrent = current;
+        layoutTabs(moved);
         setContentDescription(names.length > 0 ? names[current] : null);
         invalidate();
     }
