@@ -88,6 +88,7 @@ import com.android.launcher3.OnAlarmListener;
 import com.android.launcher3.R;
 import com.android.launcher3.ShortcutAndWidgetContainer;
 import com.android.launcher3.Utilities;
+import com.android.launcher3.WheelHome;
 import com.android.launcher3.accessibility.AccessibleDragListenerAdapter;
 import com.android.launcher3.accessibility.FolderAccessibilityHelper;
 import com.android.launcher3.anim.KeyboardInsetAnimationCallback;
@@ -562,6 +563,16 @@ public class Folder extends AbstractFloatingView implements ClipPathView, DragSo
         // the folder itself.
         requestFocus();
         super.onAttachedToWindow();
+        if (WheelHome.wheelFocus(getContext()) && !isInTouchMode()) {
+            // The wheel's ring shows on the folder itself, a stop with nothing to do: straight
+            // onto its first app, once its pages are laid out
+            post(() -> {
+                final View first = mContent.getFirstItem();
+                if (first != null && hasFocus()) {
+                    first.requestFocus();
+                }
+            });
+        }
         mFolderName.addOnFocusChangeListener(this);
     }
 
@@ -1038,6 +1049,16 @@ public class Folder extends AbstractFloatingView implements ClipPathView, DragSo
                     mFolderIcon.animateDotScale(0f, 1f);
                 }
                 mFolderIcon.requestFocus();
+            }
+            if (WheelHome.wheelFocus(getContext())) {
+                // The wheel goes on from the folder it closed, once the home is back to its
+                // size, not from nothing
+                final FolderIcon icon = mFolderIcon;
+                icon.post(() -> {
+                    if (icon.isAttachedToWindow() && !icon.isInTouchMode() && !icon.isFocused()) {
+                        icon.requestFocus();
+                    }
+                });
             }
         }
 

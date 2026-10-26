@@ -35,7 +35,9 @@
 
     <!-- Hotseat -->
     <dimen name="dynamic_grid_hotseat_bottom_tall_padding">0dp</dimen>
-    <dimen name="spring_loaded_hotseat_top_margin">76dp</dimen>
+    <!-- Under 600dp tall, as the R1's 4:3 screen: the page dragged over stays near its own
+         size, its icons near the finger, the stock spacing in values-h600dp -->
+    <dimen name="spring_loaded_hotseat_top_margin">24dp</dimen>
     <dimen name="spring_loaded_hotseat_top_margin_wide_portrait">64dp</dimen>
 
     <dimen name="dynamic_grid_hotseat_side_padding">0dp</dimen>
@@ -49,10 +51,10 @@
     <dimen name="workspace_page_indicator_overlap_workspace">0dp</dimen>
 
     <!-- Drop target bar -->
-    <dimen name="dynamic_grid_drop_target_size">56dp</dimen>
+    <dimen name="dynamic_grid_drop_target_size">48dp</dimen>
     <dimen name="drop_target_vertical_gap">20dp</dimen>
-    <dimen name="drop_target_top_margin">32dp</dimen>
-    <dimen name="drop_target_bottom_margin">16dp</dimen>
+    <dimen name="drop_target_top_margin">8dp</dimen>
+    <dimen name="drop_target_bottom_margin">8dp</dimen>
     <dimen name="drop_target_bottom_margin_wide_portrait">32dp</dimen>
 
     <!-- App Widget resize frame -->
