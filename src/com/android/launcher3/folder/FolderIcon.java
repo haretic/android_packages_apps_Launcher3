@@ -443,6 +443,17 @@ public class FolderIcon extends FrameLayout implements FloatingIconViewCompanion
     }
 
     /**
+     * Names a folder no suggestion named "Folder", not left blank under its icon: renaming it
+     * from its open name field stays as it was.
+     */
+    private void setDefaultLabel() {
+        mInfo.setTitle(getContext().getString(R.string.folder_type_name),
+                mActivity.getModelWriter());
+        onTitleChanged(mInfo.title);
+        mFolder.getFolderName().setText(mInfo.title);
+    }
+
+    /**
      * Set the suggested folder name.
      */
     public void setLabelSuggestion(FolderNameInfos nameInfos, InstanceId instanceId) {
@@ -454,6 +465,7 @@ public class FolderIcon extends FrameLayout implements FloatingIconViewCompanion
                     .withInstanceId(instanceId)
                     .withItemInfo(mInfo)
                     .log(LAUNCHER_FOLDER_AUTO_LABELING_SKIPPED_EMPTY_SUGGESTIONS);
+            setDefaultLabel();
             return;
         }
         if (!nameInfos.hasPrimary()) {
@@ -461,6 +473,7 @@ public class FolderIcon extends FrameLayout implements FloatingIconViewCompanion
                     .withInstanceId(instanceId)
                     .withItemInfo(mInfo)
                     .log(LAUNCHER_FOLDER_AUTO_LABELING_SKIPPED_EMPTY_PRIMARY);
+            setDefaultLabel();
             return;
         }
         CharSequence newTitle = nameInfos.getLabels()[0];

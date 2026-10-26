@@ -11,6 +11,13 @@ public class ClippedFolderIconLayoutRule {
     public static final float MAX_SCALE = 0.51f;
 
     private static final float MAX_RADIUS_DILATION = 0.25f;
+    // Scales at which two, three and four items fit side by side inside a circle the size of the
+    // background, each clear of its edge by FIT_MARGIN of it: the stock ones above have them
+    // stand out of a round background
+    private static final float FIT_SCALE_TWO = 0.48f;
+    private static final float FIT_SCALE_THREE = 0.45f;
+    private static final float FIT_SCALE_FOUR = 0.41f;
+    private static final float FIT_MARGIN = 0.02f;
     // The max amount of overlap the preview items can go outside of the background bounds.
     public static final float ICON_OVERLAP_FACTOR = 1 + (MAX_RADIUS_DILATION / 2f);
     private static final float ITEM_RADIUS_SCALE_FACTOR = 1.15f;
@@ -164,9 +171,12 @@ public class ClippedFolderIconLayoutRule {
             index = 3;
         }
 
-        float radius = getRadius(curNumItems);
-        double theta = theta0 + index * (2 * Math.PI / curNumItems) * direction;
         float halfIconSize = (mIconSize * scaleForItem(curNumItems, 0)) / 2;
+        // Each item whole inside a round background, as a circle icon shape's: from the centre
+        // no further than its own size and a little margin allow
+        float radius = Math.min(getRadius(curNumItems),
+                2 * (mAvailableSpace * (0.5f - FIT_MARGIN) - halfIconSize));
+        double theta = theta0 + index * (2 * Math.PI / curNumItems) * direction;
 
         // Map the location along the circle, and offset the coordinates to represent the center
         // of the icon, and to be based from the top / left of the preview area. The y component
@@ -197,11 +207,13 @@ public class ClippedFolderIconLayoutRule {
     public float scaleForItem(int numItems, int page) {
         float scale;
         if (page > 0) {
-            scale = MIN_SCALE;
-        } else if (numItems <= 3) {
-            scale = MAX_SCALE;
+            scale = FIT_SCALE_FOUR;
+        } else if (numItems <= 2) {
+            scale = FIT_SCALE_TWO;
+        } else if (numItems == 3) {
+            scale = FIT_SCALE_THREE;
         } else {
-            scale = MIN_SCALE;
+            scale = FIT_SCALE_FOUR;
         }
         return scale * mBaselineIconScale;
     }

@@ -25,6 +25,15 @@ public final class WheelHome {
                         != 0;
     }
 
+    /**
+     * Whether the system's wheel UI moves the focus (config_wheelFocus, its overlay), in the list
+     * home or the stock grid alike.
+     */
+    public static boolean wheelFocus(Context context) {
+        final int id = context.getResources().getIdentifier("config_wheelFocus", "bool", "android");
+        return id != 0 && context.getResources().getBoolean(id);
+    }
+
     /** Settings.Secure, set by the tour itself (cat.kenny.r1.wheel.settings) once it showed. */
     private static final String TOUR_DONE = "r1_wheel_tour_done";
     private static boolean sTourAsked;
