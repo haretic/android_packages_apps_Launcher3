@@ -61,7 +61,6 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewDebug;
-import android.view.ViewTreeObserver;
 import android.view.WindowInsets;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.animation.AnimationUtils;
@@ -581,12 +580,6 @@ public class Folder extends AbstractFloatingView implements ClipPathView, DragSo
         // the folder itself.
         requestFocus();
         super.onAttachedToWindow();
-        if (WheelHome.wheelFocus(getContext())) {
-            getViewTreeObserver().addOnTouchModeChangeListener(mWheelFirstItem);
-            if (!isInTouchMode()) {
-                post(() -> mWheelFirstItem.onTouchModeChanged(false));
-            }
-        }
         mFolderName.addOnFocusChangeListener(this);
     }
 
@@ -594,20 +587,23 @@ public class Folder extends AbstractFloatingView implements ClipPathView, DragSo
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
         mFolderName.removeOnFocusChangeListener(this);
-        getViewTreeObserver().removeOnTouchModeChangeListener(mWheelFirstItem);
     }
 
-    /**
-     * The wheel's ring on the folder itself, as the folder takes the focus on opening, is a stop
-     * with nothing to do: straight onto its first app, as it opens or the wheel's first step
-     * after a touch opened it.
-     */
-    private final ViewTreeObserver.OnTouchModeChangeListener mWheelFirstItem = inTouchMode -> {
-        final View first = mContent.getFirstItem();
-        if (!inTouchMode && isFocused() && first != null) {
-            first.requestFocus();
+    @Override
+    protected void onFocusChanged(boolean gainFocus, int direction, Rect previouslyFocusedRect) {
+        super.onFocusChanged(gainFocus, direction, previouslyFocusedRect);
+        if (gainFocus && !isInTouchMode() && WheelHome.wheelFocus(getContext())) {
+            // The wheel's ring on the folder itself, as it opens or the wheel's first step after
+            // a touch opened it, is a stop with nothing to do: straight onto its first app, once
+            // its pages are laid out
+            post(() -> {
+                final View first = mContent.getFirstItem();
+                if (isFocused() && first != null) {
+                    first.requestFocus();
+                }
+            });
         }
-    };
+    }
 
     @Override
     public boolean dispatchPopulateAccessibilityEvent(AccessibilityEvent event) {
