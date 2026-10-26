@@ -9,11 +9,12 @@
         launcher:dbFile="launcher_r1_list_1.db"
         launcher:defaultLayoutId="@xml/default_workspace_r1_list_1"
         launcher:deviceCategory="phone">
+        <!-- All apps is a list here, an icon beside its name a row: list rows, not tiles -->
         <display-option launcher:name="Rabbit R1 list 1"
             launcher:minWidthDps="413" launcher:minHeightDps="526"
             launcher:iconImageSize="56" launcher:iconTextSize="16"
-            launcher:allAppsIconSize="56" launcher:allAppsIconTextSize="16"
-            launcher:allAppsBorderSpace="12" launcher:allAppsCellHeight="88"
+            launcher:allAppsIconSize="48" launcher:allAppsIconTextSize="16"
+            launcher:allAppsBorderSpace="4" launcher:allAppsCellHeight="64"
             launcher:hotseatBarBottomSpace="12" launcher:canBeDefault="true" />
     </grid-option>
     <grid-option launcher:name="r1_list_2"
