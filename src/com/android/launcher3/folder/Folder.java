@@ -344,6 +344,19 @@ public class Folder extends AbstractFloatingView implements ClipPathView, DragSo
         mFolderName.setTextSize(TypedValue.COMPLEX_UNIT_PX,
                 dp.getFolderProfile().getLabelTextSizePx());
         mFolderName.setOnBackKeyListener(this);
+        if (WheelHome.wheelFocus(getContext())) {
+            // The wheel stepping onto the name only rests there: a press renames, the keyboard up
+            mFolderName.setOnKeyListener((v, keyCode, event) -> {
+                if (mIsEditingName || !KeyEvent.isConfirmKey(keyCode)) {
+                    return false;
+                }
+                if (event.getAction() == KeyEvent.ACTION_UP) {
+                    startEditingFolderName();
+                    mFolderName.showKeyboard();
+                }
+                return true;
+            });
+        }
         mFolderName.setOnEditorActionListener(this);
         mFolderName.setSelectAllOnFocus(true);
         mFolderName.setInputType(mFolderName.getInputType()
@@ -489,6 +502,10 @@ public class Folder extends AbstractFloatingView implements ClipPathView, DragSo
 
     @Override
     public boolean onBackKey() {
+        if (!mIsEditingName) {
+            // The wheel resting on the name, no rename begun: back closes the folder
+            return false;
+        }
         // Convert to a string here to ensure that no other state associated with the text field
         // gets saved.
         String newTitle = mFolderName.getText().toString();
@@ -1753,7 +1770,9 @@ public class Folder extends AbstractFloatingView implements ClipPathView, DragSo
             if (hasFocus) {
                 mFromLabelState = mInfo.getFromLabelState();
                 mFromTitle = mInfo.title;
-                post(this::startEditingFolderName);
+                if (!WheelHome.wheelFocus(getContext()) || v.isInTouchMode()) {
+                    post(this::startEditingFolderName);
+                }
             } else {
                 StatsLogger statsLogger = mStatsLogManager.logger()
                         .withItemInfo(mInfo)
