@@ -27,6 +27,7 @@ import static com.android.launcher3.logging.StatsLogManager.LauncherEvent.LAUNCH
 import android.view.View;
 import android.view.View.OnLongClickListener;
 
+import com.android.launcher3.BubbleTextView;
 import com.android.launcher3.DropTarget;
 import com.android.launcher3.Launcher;
 import com.android.launcher3.celllayout.CellInfo;
@@ -68,7 +69,19 @@ public class ItemLongClickListener {
         if (!(v.getTag() instanceof ItemInfo)) return false;
 
         launcher.setWaitingForResult(null);
+        if (showMenuForKey(launcher, v)) return true;
         beginDrag(v, launcher, (ItemInfo) v.getTag(), new DragOptions());
+        return true;
+    }
+
+    /**
+     * A long press from a key, as the side button's hold, opens the icon's menu: a drag would
+     * wait in its pre-drag for a finger that never comes, the icon hanging where the last touch
+     * was and the tile under it gone.
+     */
+    private static boolean showMenuForKey(Launcher launcher, View v) {
+        if (v.isInTouchMode() || !(v instanceof BubbleTextView icon)) return false;
+        launcher.getPopupControllerForAppIcons().show(icon);
         return true;
     }
 
@@ -108,6 +121,7 @@ public class ItemLongClickListener {
             logger.withItemInfo((ItemInfo) v.getTag());
         }
         logger.log(LAUNCHER_ALLAPPS_ITEM_LONG_PRESSED);
+        if (showMenuForKey(launcher, v)) return true;
 
         // Start the drag
         final DragController dragController = launcher.getDragController();
