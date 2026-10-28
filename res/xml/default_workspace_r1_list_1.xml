@@ -15,6 +15,9 @@
         <favorite launcher:uri="#Intent;action=android.settings.SETTINGS;end" />
     </resolve>
     <resolve launcher:screen="1" launcher:x="0" launcher:y="0">
+        <!-- Cromite, the default browser; any browser where it is left out -->
+        <favorite launcher:packageName="org.cromite.cromite"
+            launcher:className="com.google.android.apps.chrome.Main" />
         <favorite launcher:uri="#Intent;action=android.intent.action.MAIN;category=android.intent.category.APP_BROWSER;end" />
     </resolve>
     <resolve launcher:screen="1" launcher:x="0" launcher:y="1">
