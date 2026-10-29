@@ -1049,9 +1049,16 @@ public class DeviceProfile {
         // QSB on top or inline
         if (mDeviceProperties.getTaskbarConfiguration().isTaskbarPresent()
                 || mHotseatProfile.isQsbInline()) {
-            return mHotseatProfile.getBarBottomSpacePx() - (Math.abs(
+            final int padding = mHotseatProfile.getBarBottomSpacePx() - (Math.abs(
                     mHotseatProfile.getCellHeightPx()
                             - getWorkspaceProfile().getIconSizePx()) / 2);
+            // The r1 list's dock row fills its whole cell, as tall as a page's: the bar's room
+            // beyond it goes under it
+            if (inv.dbFile.startsWith("launcher_r1_list_") && inv.numColumns == 1) {
+                return Math.max(0,
+                        mHotseatProfile.getBarSizePx() - mHotseatProfile.getCellHeightPx());
+            }
+            return padding;
         } else {
             return mHotseatProfile.getBarSizePx() - mHotseatProfile.getCellHeightPx();
         }

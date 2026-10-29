@@ -22,6 +22,7 @@ import com.android.launcher3.Utilities.getIconVisibleSizePx
 import com.android.launcher3.deviceprofile.HotseatProfileInitialValues.Factory.calculateHotseatBarSizePx
 import com.android.launcher3.folder.ClippedFolderIconLayoutRule.ICON_OVERLAP_FACTOR
 import kotlin.math.ceil
+import kotlin.math.max
 import kotlin.math.min
 
 data class HotseatBorderAndSpace(var widthPx: Int, var columnSpan: Int, var borderSpace: Int)
@@ -389,6 +390,35 @@ data class HotseatProfile(
                     numShownHotseatIconsParam = displayOptionSpec.numShownHotseatIcons,
                 )
 
+            val calculatedBarSizePx =
+                calculateHotseatBarSizePx(
+                    hotseatIconSizePx = workspaceProfile.iconSizePx,
+                    barEdgePaddingPx = hotseatProfileInitialValues.barEdgePaddingPx,
+                    isVerticalBarLayout = isVerticalBarLayout,
+                    barWorkspaceSpacePx = hotseatProfileInitialValues.barWorkspaceSpacePx,
+                    qsbVisualHeight = hotseatProfileInitialValues.qsbVisualHeight,
+                    barBottomSpacePx = hotseatProfileInitialValues.barBottomSpacePx,
+                    qsbSpace = hotseatProfileInitialValues.qsbSpace,
+                    isQsbInline = hotseatProfileInitialValues.isQsbInline,
+                )
+            // The r1 list's dock is a row as its pages' are, in a cell as tall as theirs as laid
+            // out (pages squeeze theirs below cellHeightPx to fit), atop a bar grown to a page
+            // cell and 8dp: a cell the icon's size made a shorter row
+            val isR1ListDock =
+                inv.dbFile.startsWith("launcher_r1_list_") && inv.numColumns == 1 &&
+                    !isVerticalBarLayout
+            val cellHeightPx =
+                if (isR1ListDock)
+                    workspaceProfile.cellSize.y.takeIf { it > 0 }
+                        ?.let { min(it, workspaceProfile.cellHeightPx) }
+                        ?: workspaceProfile.cellHeightPx
+                else ceil(workspaceProfile.iconSizePx * ICON_OVERLAP_FACTOR).toInt()
+            val barSizePx =
+                if (isR1ListDock)
+                    max(calculatedBarSizePx,
+                        workspaceProfile.cellHeightPx + 8 * deviceProperties.densityDpi / 160)
+                else calculatedBarSizePx
+
             return HotseatProfile(
                 areNavButtonsInline = hotseatProfileInitialValues.areNavButtonsInline,
                 navButtonsLayoutWidthPx = hotseatProfileInitialValues.navButtonsLayoutWidthPx,
@@ -406,18 +436,8 @@ data class HotseatProfile(
                 maxIconSpacePx = hotseatProfileInitialValues.maxIconSpacePx,
                 barBottomSpacePx = hotseatProfileInitialValues.barBottomSpacePx,
                 qsbSpace = hotseatProfileInitialValues.qsbSpace,
-                cellHeightPx = ceil(workspaceProfile.iconSizePx * ICON_OVERLAP_FACTOR).toInt(),
-                barSizePx =
-                    calculateHotseatBarSizePx(
-                        hotseatIconSizePx = workspaceProfile.iconSizePx,
-                        barEdgePaddingPx = hotseatProfileInitialValues.barEdgePaddingPx,
-                        isVerticalBarLayout = isVerticalBarLayout,
-                        barWorkspaceSpacePx = hotseatProfileInitialValues.barWorkspaceSpacePx,
-                        qsbVisualHeight = hotseatProfileInitialValues.qsbVisualHeight,
-                        barBottomSpacePx = hotseatProfileInitialValues.barBottomSpacePx,
-                        qsbSpace = hotseatProfileInitialValues.qsbSpace,
-                        isQsbInline = hotseatProfileInitialValues.isQsbInline,
-                    ),
+                cellHeightPx = cellHeightPx,
+                barSizePx = barSizePx,
                 widthPx = hotseatWithBorderAndSpace.widthPx,
                 numShownIcons = hotseatWithBorderAndSpace.numShownIcons,
                 columnSpan = hotseatWithBorderAndSpace.columnSpan,
