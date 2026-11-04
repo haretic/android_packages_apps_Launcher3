@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.drawable.GradientDrawable;
@@ -20,10 +21,13 @@ import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.VelocityTracker;
+import android.view.ViewConfiguration;
 import android.view.ViewTreeObserver;
 import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.FrameLayout;
+import android.widget.OverScroller;
 import android.widget.Toast;
 
 import com.android.launcher3.model.data.ItemInfo;
@@ -60,6 +64,15 @@ public class WheelHomeTabs extends View implements Insettable, PagedView.PageSwi
     private float[] mTabWidth = new float[0];
     private float mTabsWidth;
     private ValueAnimator mScroller;
+    /** The inside of the strip, where the tabs are drawn: they are cut off at its round ends. */
+    private final Path mInside = new Path();
+    /** A finger dragging the strip along: from where, and how fast for the fling it ends in. */
+    private final int mTouchSlop;
+    private final OverScroller mFling;
+    private VelocityTracker mVelocity;
+    private float mDownX;
+    private float mLastX;
+    private boolean mDragging;
     /** The tab a long press is on, or -1 for the current one. */
     private int mTouchedTab = -1;
     /** The hold that opened the options, so its release doesn't switch the tab too. */
@@ -71,6 +84,8 @@ public class WheelHomeTabs extends View implements Insettable, PagedView.PageSwi
 
     public WheelHomeTabs(Context context, AttributeSet attrs) {
         super(context, attrs);
+        mTouchSlop = ViewConfiguration.get(context).getScaledTouchSlop();
+        mFling = new OverScroller(context);
         mText.setTextAlign(Paint.Align.CENTER);
         mText.setTextSize(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 16,
                 getResources().getDisplayMetrics()));
@@ -102,10 +117,72 @@ public class WheelHomeTabs extends View implements Insettable, PagedView.PageSwi
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        if (event.getActionMasked() == MotionEvent.ACTION_DOWN) {
-            mTouchedTab = tabAt(event.getX());
+        if (mVelocity == null) {
+            mVelocity = VelocityTracker.obtain();
+        }
+        mVelocity.addMovement(event);
+        switch (event.getActionMasked()) {
+            case MotionEvent.ACTION_DOWN -> {
+                mTouchedTab = tabAt(event.getX());
+                mDownX = mLastX = event.getX();
+                mDragging = false;
+                mFling.forceFinished(true);
+                if (mScroller != null) {
+                    mScroller.cancel();
+                }
+            }
+            case MotionEvent.ACTION_MOVE -> {
+                final float x = event.getX();
+                if (!mDragging && Math.abs(x - mDownX) > mTouchSlop && maxScroll() > 0) {
+                    // A drag along the strip, not a tap or a hold on a tab, nor a page swipe
+                    mDragging = true;
+                    mLastX = x;
+                    getParent().requestDisallowInterceptTouchEvent(true);
+                    final MotionEvent cancel = MotionEvent.obtain(event);
+                    cancel.setAction(MotionEvent.ACTION_CANCEL);
+                    super.onTouchEvent(cancel);
+                    cancel.recycle();
+                }
+                if (mDragging) {
+                    scrollTo(clampScroll(getScrollX() + Math.round(mLastX - x)), 0);
+                    mLastX = x;
+                    return true;
+                }
+            }
+            case MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                final boolean dragged = mDragging;
+                if (dragged && event.getActionMasked() == MotionEvent.ACTION_UP) {
+                    mVelocity.computeCurrentVelocity(1000);
+                    mFling.fling(getScrollX(), 0, -Math.round(mVelocity.getXVelocity()), 0,
+                            0, maxScroll(), 0, 0);
+                    postInvalidateOnAnimation();
+                }
+                mDragging = false;
+                mVelocity.recycle();
+                mVelocity = null;
+                if (dragged) {
+                    return true;
+                }
+            }
         }
         return super.onTouchEvent(event);
+    }
+
+    @Override
+    public void computeScroll() {
+        if (mFling.computeScrollOffset()) {
+            scrollTo(mFling.getCurrX(), 0);
+            postInvalidateOnAnimation();
+        }
+    }
+
+    private int maxScroll() {
+        return Math.round(Math.max(0,
+                mTabsWidth - (getWidth() - getPaddingLeft() - getPaddingRight())));
+    }
+
+    private int clampScroll(int x) {
+        return Math.max(0, Math.min(maxScroll(), x));
     }
 
     /** The tab under x, -1 for none. */
@@ -119,8 +196,11 @@ public class WheelHomeTabs extends View implements Insettable, PagedView.PageSwi
         return -1;
     }
 
-    /** Lays the tabs out along the strip, see mTabX, and scrolls the current one into it. */
-    private void layoutTabs(boolean animate) {
+    /**
+     * Lays the tabs out along the strip, see mTabX; following, scrolls the current one into it,
+     * else leaves the strip where a finger took it.
+     */
+    private void layoutTabs(boolean follow, boolean animate) {
         final int count = mNames.length;
         final float room = getWidth() - getPaddingLeft() - getPaddingRight();
         mTabX = new float[count];
@@ -153,7 +233,11 @@ public class WheelHomeTabs extends View implements Insettable, PagedView.PageSwi
             x += mTabWidth[i];
         }
         mTabsWidth = total;
-        scrollToCurrent(animate);
+        if (follow) {
+            scrollToCurrent(animate);
+        } else {
+            scrollTo(clampScroll(getScrollX()), 0);
+        }
     }
 
     /** Scrolls the strip as little as brings the current tab wholly into it. */
@@ -188,7 +272,10 @@ public class WheelHomeTabs extends View implements Insettable, PagedView.PageSwi
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
-        layoutTabs(false);
+        mInside.reset();
+        mInside.addRoundRect(getPaddingLeft(), getPaddingTop(), w - getPaddingRight(),
+                h - getPaddingBottom(), dp(20), dp(20), Path.Direction.CW);
+        layoutTabs(true, false);
     }
 
     @Override
@@ -207,6 +294,12 @@ public class WheelHomeTabs extends View implements Insettable, PagedView.PageSwi
         final float baseline = (top + bottom) / 2 - (mText.ascent() + mText.descent()) / 2;
         final int onPrimary = getContext().getColor(android.R.color.system_on_primary_dark);
         final int onSurface = getContext().getColor(android.R.color.system_on_surface_dark);
+        // Within the strip: the launcher doesn't clip its views, so a tab half out of the
+        // strip was drawn on past its end
+        canvas.save();
+        canvas.translate(getScrollX(), 0);
+        canvas.clipPath(mInside);
+        canvas.translate(-getScrollX(), 0);
         for (int i = 0; i < count; i++) {
             final float x = mTabX[i];
             final float width = mTabWidth[i];
@@ -219,6 +312,13 @@ public class WheelHomeTabs extends View implements Insettable, PagedView.PageSwi
                     width - dp(12), TextUtils.TruncateAt.END).toString();
             canvas.drawText(name, x + width / 2, baseline, mText);
         }
+        canvas.restore();
+    }
+
+    @Override
+    protected boolean isPaddingOffsetRequired() {
+        // The names fade out at the strip's inside ends, not at the edge of its background
+        return true;
     }
 
     /** Called by the launcher once its views are set up. */
@@ -358,7 +458,7 @@ public class WheelHomeTabs extends View implements Insettable, PagedView.PageSwi
         final boolean moved = current != mCurrent;
         mNames = names;
         mCurrent = current;
-        layoutTabs(moved);
+        layoutTabs(moved, moved);
         setContentDescription(names.length > 0 ? names[current] : null);
         invalidate();
     }
