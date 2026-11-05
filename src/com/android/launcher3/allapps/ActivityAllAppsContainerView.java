@@ -317,8 +317,10 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
         int layerFg = getContext().getColor(R.color.blur_shade_panel_fg);
         int layerBg = getContext().getColor(R.color.blur_shade_panel_bg);
         mBottomSheetBackgroundColorOverBlur = ColorUtils.compositeColors(layerFg, layerBg);
+        // Dark, near black as the shade where it can't blur: the secondary palette's tone 20
+        // was a mid grey, tinted in most styles
         mBottomSheetBackgroundColorBlurFallback = getContext().getColor(
-                Utilities.isDarkTheme(getContext()) ? android.R.color.system_accent2_800
+                Utilities.isDarkTheme(getContext()) ? android.R.color.system_neutral1_900
                         : android.R.color.system_accent2_200);
 
         mSearchUiManager.initializeSearch(this);
