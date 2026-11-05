@@ -557,7 +557,7 @@ public abstract class RecentsView<
 
     protected final TaskOverlayFactory mTaskOverlayFactory;
 
-    protected boolean mDisallowScrollToClearAll;
+    protected boolean mDisallowScrollToClearAll = true;
     private boolean mOverlayEnabled;
     protected boolean mFreezeViewVisibility;
     private boolean mOverviewGridEnabled;
@@ -1041,6 +1041,7 @@ public abstract class RecentsView<
         // OverviewActionsView related.
         mIs3PLauncher = !mOverviewComponentObserver.isHomeAndOverviewSame();
         mActionsView = actionsView;
+        mActionsView.setClearAll(() -> dismissAllTasks(null));
         mActionsView.updateHiddenFlags(HIDDEN_NO_TASKS, !hasTaskViews());
         // Update flags for 1p/3p launchers
         mActionsView.updateFor3pLauncher(mIs3PLauncher);
@@ -5079,6 +5080,8 @@ public abstract class RecentsView<
     }
 
     public void setDisallowScrollToClearAll(boolean disallowScrollToClearAll) {
+        // Clear all sits beside screenshot in the actions; the list never scrolls to its own
+        disallowScrollToClearAll = true;
         if (mDisallowScrollToClearAll != disallowScrollToClearAll) {
             mDisallowScrollToClearAll = disallowScrollToClearAll;
             updateMinAndMaxScrollX();

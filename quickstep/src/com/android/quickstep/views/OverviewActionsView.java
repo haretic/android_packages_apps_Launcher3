@@ -162,6 +162,8 @@ public class OverviewActionsView<T extends OverlayUICallbacks> extends FrameLayo
 
     @Nullable
     protected T mCallbacks;
+    @Nullable
+    private Runnable mClearAll;
 
     @Nullable
     protected DeviceProfile mDp;
@@ -211,6 +213,10 @@ public class OverviewActionsView<T extends OverlayUICallbacks> extends FrameLayo
         // casting this.
         View screenshotButton = findViewById(R.id.action_screenshot);
         screenshotButton.setOnClickListener(this);
+        View clearAll = findViewById(R.id.action_clear_all);
+        if (clearAll != null) {
+            clearAll.setOnClickListener(this);
+        }
         mSplitButton = findViewById(R.id.action_split);
         mSplitButton.setOnClickListener(this);
         mSaveAppPairButton.setOnClickListener(this);
@@ -225,13 +231,22 @@ public class OverviewActionsView<T extends OverlayUICallbacks> extends FrameLayo
         mCallbacks = callbacks;
     }
 
+    /** What the clear all button beside screenshot does: RecentsView dismisses every task. */
+    public void setClearAll(@Nullable Runnable clearAll) {
+        mClearAll = clearAll;
+    }
+
     @Override
     public void onClick(View view) {
         if (mCallbacks == null) {
             return;
         }
         int id = view.getId();
-        if (id == R.id.action_screenshot) {
+        if (id == R.id.action_clear_all) {
+            if (mClearAll != null) {
+                mClearAll.run();
+            }
+        } else if (id == R.id.action_screenshot) {
             mCallbacks.onScreenshot();
         } else if (id == R.id.action_split) {
             mCallbacks.onSplit();
