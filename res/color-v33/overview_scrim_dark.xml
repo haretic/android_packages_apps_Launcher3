@@ -13,8 +13,7 @@
      See the License for the specific language governing permissions and
      limitations under the License.
 -->
+<!-- Near black as the app drawer and shade where they can't blur, not a mid grey -->
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
-    <item
-        android:color="@android:color/system_neutral2_500"
-        android:lStar="35"/>
+    <item android:color="@android:color/system_neutral1_900" />
 </selector>
