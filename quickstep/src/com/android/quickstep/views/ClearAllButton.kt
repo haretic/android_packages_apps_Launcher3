@@ -42,9 +42,10 @@ constructor(
 
     private val clearAllButtonAlpha =
         object : MultiValueAlpha(this, Alpha.entries.size) {
+            // Never shown: clear all sits beside screenshot in the overview actions
             override fun apply(value: Float) {
-                super.apply(value)
-                isClickable = value >= 1f
+                super.apply(0f)
+                isClickable = false
             }
         }
     var scrollAlpha by MultiPropertyDelegate(clearAllButtonAlpha, Alpha.SCROLL)
