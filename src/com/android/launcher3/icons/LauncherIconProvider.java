@@ -18,6 +18,7 @@ package com.android.launcher3.icons;
 import android.content.Context;
 import android.content.res.Resources;
 import android.content.res.XmlResourceParser;
+import android.os.Build;
 import android.text.TextUtils;
 import android.util.ArrayMap;
 import android.util.Log;
@@ -69,8 +70,10 @@ public class LauncherIconProvider extends IconProvider {
     @Override
     public void updateSystemState() {
         super.updateSystemState();
+        // System apps keep their APK path from build to build, and an overlay never changes it:
+        // the build's time in the state draws the icons again after each new build
         mSystemState = mSystemState.withTheme(
-                mThemeManager.getIconState().getThemeCode(),
+                mThemeManager.getIconState().getThemeCode() + "@" + Build.TIME,
                 mThemeManager.getIconState().isCircle());
     }
 
