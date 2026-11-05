@@ -469,9 +469,17 @@ public class WheelHomeTabs extends View implements Insettable, PagedView.PageSwi
      * app's, which says what is on them; numbered while empty.
      */
     private String name(int page) {
-        final String saved = mPrefs.getString(NAME + mWorkspace.getScreenIdForPageIndex(page), null);
+        final int screenId = mWorkspace.getScreenIdForPageIndex(page);
+        final String saved = mPrefs.getString(NAME + screenId, null);
         if (saved != null && !saved.isEmpty()) {
             return saved;
+        }
+        // Until renamed, a tab of the default layout has the name it came with
+        if (saved == null) {
+            final String[] defaults = getResources().getStringArray(R.array.wheel_home_default_tab_names);
+            if (screenId >= 0 && screenId < defaults.length && !defaults[screenId].isEmpty()) {
+                return defaults[screenId];
+            }
         }
         if (page == 0) {
             return getContext().getString(R.string.wheel_home_tab_first);
@@ -597,6 +605,7 @@ public class WheelHomeTabs extends View implements Insettable, PagedView.PageSwi
     private void addTab() {
         final int screenId = LauncherAppState.getInstance(getContext()).getModel()
                 .getModelDbController().getNewScreenId();
+        mPrefs.edit().putString(NAME + screenId, "").apply();
         mWorkspace.insertNewWorkspaceScreen(screenId);
         update();
         mWorkspace.snapToPage(mWorkspace.getPageCount() - 1);
@@ -610,7 +619,8 @@ public class WheelHomeTabs extends View implements Insettable, PagedView.PageSwi
             return;
         }
         final int screenId = mWorkspace.getScreenIdForPageIndex(page);
-        mPrefs.edit().remove(NAME + screenId).apply();
+        // Empty, not removed: a tab that takes this screen id later starts with the usual name
+        mPrefs.edit().putString(NAME + screenId, "").apply();
         // The model has no row for a page without apps, so only the view goes
         mWorkspace.stripEmptyScreens();
         update();

@@ -1,32 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- The home: the clock and Files on Home; the Internet tab (screen 1, named by
+     wheel_home_default_tab_names) with R1HA, the store, the browser and F-Droid; Settings below -->
 <favorites xmlns:launcher="http://schemas.android.com/apk/res-auto/com.android.launcher3">
     <appwidget launcher:packageName="com.android.deskclock"
         launcher:className="com.android.alarmclock.DigitalAppWidgetProvider"
         launcher:screen="0" launcher:x="0" launcher:y="0"
-        launcher:spanX="1" launcher:spanY="1" />
-    <resolve launcher:screen="0" launcher:x="0" launcher:y="1">
-        <favorite launcher:uri="#Intent;action=android.intent.action.MAIN;category=android.intent.category.APP_GALLERY;end" />
-    </resolve>
-    <resolve launcher:screen="0" launcher:x="0" launcher:y="2">
-        <favorite launcher:uri="#Intent;action=android.intent.action.MAIN;category=android.intent.category.APP_MUSIC;end" />
-    </resolve>
+        launcher:spanX="1" launcher:spanY="2" />
     <resolve launcher:screen="0" launcher:x="0" launcher:y="3">
-        <favorite launcher:uri="#Intent;action=android.settings.SETTINGS;end" />
+        <favorite launcher:uri="#Intent;action=android.intent.action.VIEW;type=vnd.android.document/directory;end" />
     </resolve>
-    <resolve launcher:screen="1" launcher:x="0" launcher:y="0">
+    <favorite launcher:packageName="com.github.itskenny0.r1ha" launcher:className="com.github.itskenny0.r1ha.MainActivity"
+        launcher:screen="1" launcher:x="0" launcher:y="0" />
+    <favorite launcher:packageName="com.aurora.store" launcher:className="com.aurora.store.ComposeActivity"
+        launcher:screen="1" launcher:x="0" launcher:y="1" />
+    <resolve launcher:screen="1" launcher:x="0" launcher:y="2">
         <!-- Cromite, the default browser; any browser where it is left out -->
         <favorite launcher:packageName="org.cromite.cromite"
             launcher:className="com.google.android.apps.chrome.Main" />
         <favorite launcher:uri="#Intent;action=android.intent.action.MAIN;category=android.intent.category.APP_BROWSER;end" />
     </resolve>
-    <resolve launcher:screen="1" launcher:x="0" launcher:y="1">
-        <favorite launcher:uri="#Intent;action=android.intent.action.VIEW;type=vnd.android.document/directory;end" />
-    </resolve>
-    <resolve launcher:screen="1" launcher:x="0" launcher:y="2">
-        <favorite launcher:uri="#Intent;action=android.intent.action.SHOW_ALARMS;end" />
-    </resolve>
+    <favorite launcher:packageName="com.looker.droidify" launcher:className="com.looker.droidify.MainActivity"
+        launcher:screen="1" launcher:x="0" launcher:y="3" />
     <resolve launcher:container="-101" launcher:screen="0" launcher:x="0" launcher:y="0">
-        <favorite launcher:uri="#Intent;action=android.intent.action.DIAL;end" />
+        <favorite launcher:uri="#Intent;action=android.settings.SETTINGS;end" />
     </resolve>
 </favorites>

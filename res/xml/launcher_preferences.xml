@@ -27,7 +27,7 @@
         android:summaryOff="@string/settings_lock_layout_summary_off" />
 
     <SwitchPreferenceCompat
-        android:defaultValue="false"
+        android:defaultValue="@bool/config_sleepGestureDefault"
         android:key="pref_sleep_gesture"
         android:persistent="true"
         android:title="@string/pref_sleep_gesture_title"

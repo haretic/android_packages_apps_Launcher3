@@ -10,5 +10,12 @@
     <string name="wheel_home_tab_remove">Remove tab</string>
     <!-- A tab can only go once its apps are moved off it -->
     <string name="wheel_home_tab_remove_not_empty">Move its apps off to remove the tab</string>
+    <!-- The default home's second tab, until it's renamed -->
+    <string name="wheel_home_tab_internet">Internet</string>
     <string name="wheel_home_tab_added">Hold an app and drag it here to keep the tab</string>
+    <!-- Names the default layouts' tabs start with, by screen id; empty: the usual name -->
+    <string-array name="wheel_home_default_tab_names" translatable="false">
+        <item></item>
+        <item>@string/wheel_home_tab_internet</item>
+    </string-array>
 </resources>
