@@ -37,8 +37,9 @@ import com.android.launcher3.statemanager.StateManager.StateListener;
  * The wheel launcher's tabs: one for each home screen page, over the list of apps (list profiles,
  * WheelHome). A tap goes to the tab; with the wheel, the tabs are a stop above the list, where the
  * side button goes to the next tab and holding it opens the tab's options: rename, add a tab,
- * remove it while empty. A tab is a home screen page, so its apps are dragged onto it and it keeps
- * its place among the others; the names are kept by page, in device protected storage.
+ * remove it while empty, but for the first, the launcher's first page, which always stays. A
+ * tab is a home screen page, so its apps are dragged onto it and it keeps its place among the
+ * others; the names are kept by page, in device protected storage.
  */
 public class WheelHomeTabs extends View implements Insettable, PagedView.PageSwitchListener,
         StateListener<LauncherState>, ViewTreeObserver.OnGlobalLayoutListener {
@@ -539,12 +540,18 @@ public class WheelHomeTabs extends View implements Insettable, PagedView.PageSwi
     void showOptions() {
         final int page = mWorkspace.getNextPage();
         final boolean empty = isEmpty(page);
-        final String[] options = {
+        // The first tab is the launcher's first page, which it always keeps: no Remove
+        final boolean removable =
+                mWorkspace.getScreenIdForPageIndex(page) != WorkspaceLayoutManager.FIRST_SCREEN_ID;
+        final String[] options = removable ? new String[] {
                 getContext().getString(R.string.wheel_home_tab_rename),
                 getContext().getString(R.string.wheel_home_tab_add),
                 getContext().getString(empty
                         ? R.string.wheel_home_tab_remove
                         : R.string.wheel_home_tab_remove_not_empty),
+        } : new String[] {
+                getContext().getString(R.string.wheel_home_tab_rename),
+                getContext().getString(R.string.wheel_home_tab_add),
         };
         new AlertDialog.Builder(getContext())
                 .setTitle(name(page))
