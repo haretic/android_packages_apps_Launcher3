@@ -11,6 +11,8 @@ import android.graphics.Path;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.drawable.GradientDrawable;
+import android.os.Process;
+import android.os.UserHandle;
 import android.text.InputType;
 import android.text.TextPaint;
 import android.text.TextUtils;
@@ -30,16 +32,22 @@ import android.widget.FrameLayout;
 import android.widget.OverScroller;
 import android.widget.Toast;
 
+import com.android.launcher3.allapps.AppInfoComparator;
+import com.android.launcher3.model.data.AppInfo;
 import com.android.launcher3.model.data.ItemInfo;
 import com.android.launcher3.statemanager.StateManager.StateListener;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * The wheel launcher's tabs: one for each home screen page, over the list of apps (list profiles,
  * WheelHome). A tap goes to the tab; with the wheel, the tabs are a stop above the list, where the
- * side button goes to the next tab and holding it opens the tab's options: rename, add a tab,
- * remove it while empty, but for the first, the launcher's first page, which always stays. A
- * tab is a home screen page, so its apps are dragged onto it and it keeps its place among the
- * others; the names are kept by page, in device protected storage.
+ * side button goes to the next tab and holding it opens the tab's options: rename, add an app,
+ * add a tab, remove it while empty, but for the first, the launcher's first page, which always
+ * stays. A tab is a home screen page, so its apps are added from the options or dragged onto it
+ * and it keeps its place among the others; the names are kept by page, in device protected
+ * storage.
  */
 public class WheelHomeTabs extends View implements Insettable, PagedView.PageSwitchListener,
         StateListener<LauncherState>, ViewTreeObserver.OnGlobalLayoutListener {
@@ -548,28 +556,28 @@ public class WheelHomeTabs extends View implements Insettable, PagedView.PageSwi
     void showOptions() {
         final int page = mWorkspace.getNextPage();
         final boolean empty = isEmpty(page);
+        final List<CharSequence> options = new ArrayList<>();
+        final List<Runnable> actions = new ArrayList<>();
+        options.add(getContext().getString(R.string.wheel_home_tab_rename));
+        actions.add(() -> rename(page));
+        // An app onto the tab from a list the wheel walks, not only a drag that needs a finger
+        if (Utilities.isWorkspaceEditAllowed(getContext())) {
+            options.add(getContext().getString(R.string.wheel_home_tab_add_app));
+            actions.add(() -> pickApp(page, false));
+        }
+        options.add(getContext().getString(R.string.wheel_home_tab_add));
+        actions.add(this::addTab);
         // The first tab is the launcher's first page, which it always keeps: no Remove
-        final boolean removable =
-                mWorkspace.getScreenIdForPageIndex(page) != WorkspaceLayoutManager.FIRST_SCREEN_ID;
-        final String[] options = removable ? new String[] {
-                getContext().getString(R.string.wheel_home_tab_rename),
-                getContext().getString(R.string.wheel_home_tab_add),
-                getContext().getString(empty
-                        ? R.string.wheel_home_tab_remove
-                        : R.string.wheel_home_tab_remove_not_empty),
-        } : new String[] {
-                getContext().getString(R.string.wheel_home_tab_rename),
-                getContext().getString(R.string.wheel_home_tab_add),
-        };
+        if (mWorkspace.getScreenIdForPageIndex(page) != WorkspaceLayoutManager.FIRST_SCREEN_ID) {
+            options.add(getContext().getString(empty
+                    ? R.string.wheel_home_tab_remove
+                    : R.string.wheel_home_tab_remove_not_empty));
+            actions.add(() -> remove(page));
+        }
         new AlertDialog.Builder(getContext())
                 .setTitle(name(page))
-                .setItems(options, (dialog, which) -> {
-                    switch (which) {
-                        case 0 -> rename(page);
-                        case 1 -> addTab();
-                        case 2 -> remove(page);
-                    }
-                })
+                .setItems(options.toArray(new CharSequence[0]),
+                        (dialog, which) -> actions.get(which).run())
                 .show();
     }
 
@@ -601,15 +609,81 @@ public class WheelHomeTabs extends View implements Insettable, PagedView.PageSwi
                 .show();
     }
 
-    /** A new tab at the end; it stays once an app is dragged onto it. */
+    /**
+     * A new tab at the end, shown, and the list of apps to put its first on, which keeps it: an
+     * empty tab goes the next time the launcher loads its pages.
+     */
     private void addTab() {
         final int screenId = LauncherAppState.getInstance(getContext()).getModel()
                 .getModelDbController().getNewScreenId();
         mPrefs.edit().putString(NAME + screenId, "").apply();
         mWorkspace.insertNewWorkspaceScreen(screenId);
         update();
-        mWorkspace.snapToPage(mWorkspace.getPageCount() - 1);
-        Toast.makeText(getContext(), R.string.wheel_home_tab_added, Toast.LENGTH_LONG).show();
+        // The new page has no scroll until the workspace lays it out: snapped to straight away,
+        // the strip had the new tab while the first page stayed up under it
+        mWorkspace.addOnLayoutChangeListener(new OnLayoutChangeListener() {
+            @Override
+            public void onLayoutChange(View v, int left, int top, int right, int bottom,
+                    int oldLeft, int oldTop, int oldRight, int oldBottom) {
+                v.removeOnLayoutChangeListener(this);
+                v.post(() -> {
+                    final int page = mWorkspace.getPageIndexForScreenId(screenId);
+                    if (page < 0) {
+                        return;
+                    }
+                    mWorkspace.snapToPage(page);
+                    if (Utilities.isWorkspaceEditAllowed(getContext())) {
+                        pickApp(page, true);
+                    }
+                });
+            }
+        });
+        mWorkspace.requestLayout();
+    }
+
+    /**
+     * The apps, by name, to add one to the tab {@code page}; for a new tab, {@code keep}, left
+     * without one it says how to keep the tab.
+     */
+    private void pickApp(int page, boolean keep) {
+        final AppInfo[] all = mLauncher.getAppsView().getAppsStore().getApps();
+        final UserHandle me = Process.myUserHandle();
+        final List<AppInfo> apps = new ArrayList<>();
+        for (AppInfo app : all) {
+            if (me.equals(app.user) && !TextUtils.isEmpty(app.title)) {
+                apps.add(app);
+            }
+        }
+        apps.sort(new AppInfoComparator(getContext()));
+        final CharSequence[] titles = new CharSequence[apps.size()];
+        for (int i = 0; i < titles.length; i++) {
+            titles[i] = apps.get(i).title;
+        }
+        new AlertDialog.Builder(getContext())
+                .setTitle(getContext().getString(R.string.wheel_home_tab_pick_app, name(page)))
+                .setItems(titles, (dialog, which) -> addApp(page, apps.get(which)))
+                .setOnCancelListener(dialog -> {
+                    if (keep && isEmpty(page)) {
+                        Toast.makeText(getContext(), R.string.wheel_home_tab_added,
+                                Toast.LENGTH_LONG).show();
+                    }
+                })
+                .show();
+    }
+
+    /** The app onto the tab {@code page}, its first free row, as All apps' Add to home screen. */
+    private void addApp(int page, AppInfo app) {
+        final CellLayout cells = (CellLayout) mWorkspace.getPageAt(page);
+        if (cells == null || !cells.findCellForSpan(new int[2], 1, 1)) {
+            Toast.makeText(getContext(), R.string.wheel_home_tab_full, Toast.LENGTH_LONG).show();
+            return;
+        }
+        // Add to home screen fills the page that is up first, so this tab is up
+        if (mWorkspace.getCurrentPage() != page) {
+            mWorkspace.setCurrentPage(page);
+        }
+        mLauncher.getAccessibilityDelegate().addToWorkspace(app, false /* accessibility */,
+                null /* finishCallback */);
     }
 
     private void remove(int page) {
