@@ -6,13 +6,21 @@
     <!-- The name of an empty tab after the first until it is given one; others take their first app's -->
     <string name="wheel_home_tab_numbered">Tab <xliff:g id="number" example="2">%1$d</xliff:g></string>
     <string name="wheel_home_tab_rename">Rename</string>
+    <!-- A tab's option: a list of the apps, the one picked goes onto the tab -->
+    <string name="wheel_home_tab_add_app">Add an app</string>
+    <!-- The title of that list, the tab's name -->
+    <string name="wheel_home_tab_pick_app">Add an app to <xliff:g id="tab" example="Tab 3">%1$s</xliff:g></string>
+    <!-- The tab's rows are all taken -->
+    <string name="wheel_home_tab_full">No room left on this tab</string>
     <string name="wheel_home_tab_add">Add a tab</string>
     <string name="wheel_home_tab_remove">Remove tab</string>
     <!-- A tab can only go once its apps are moved off it -->
     <string name="wheel_home_tab_remove_not_empty">Move its apps off to remove the tab</string>
     <!-- The default home's second tab, until it's renamed -->
     <string name="wheel_home_tab_internet">Internet</string>
-    <string name="wheel_home_tab_added">Hold an app and drag it here to keep the tab</string>
+    <!-- A new tab left without an app: it goes when the launcher next loads its pages. A hold is
+         the side button's or a finger's, either opens the tab's options -->
+    <string name="wheel_home_tab_added">Hold the tabs and pick Add an app to keep this tab</string>
     <!-- Names the default layouts' tabs start with, by screen id; empty: the usual name -->
     <string-array name="wheel_home_default_tab_names" translatable="false">
         <item></item>
