@@ -1057,6 +1057,7 @@ public abstract class RecentsView<
         mEmptyRecentsMessageView = emptyRecentsMessageView;
         if (mEmptyRecentsMessageView != null) {
             updateEmptyMessageConfiguration();
+            updateEmptyMessageFocus();
         } else {
             mEmptyIcon = mContext.getDrawable(R.drawable.ic_view_carousel);
             mEmptyIcon.setCallback(this);
@@ -3617,6 +3618,19 @@ public abstract class RecentsView<
         return mContentAlpha;
     }
 
+    /**
+     * The empty message beside this view, not in it, stays visible while the overview's content
+     * fades out: on Home its message, unseen, was a stop for the wheel and keys with no ring.
+     */
+    private void updateEmptyMessageFocus() {
+        final boolean shown = mContentAlpha > 0;
+        if (!shown && mEmptyRecentsMessageView.hasFocus()) {
+            mEmptyRecentsMessageView.clearFocus();
+        }
+        mEmptyRecentsMessageView.setDescendantFocusability(shown
+                ? ViewGroup.FOCUS_AFTER_DESCENDANTS : ViewGroup.FOCUS_BLOCK_DESCENDANTS);
+    }
+
     public void setContentAlpha(float alpha) {
         if (alpha == mContentAlpha) {
             return;
@@ -3636,6 +3650,7 @@ public abstract class RecentsView<
         }
         if (mEmptyRecentsMessageView != null) {
             mEmptyRecentsMessageView.setAlpha(alpha);
+            updateEmptyMessageFocus();
         } else {
             int alphaInt = Math.round(alpha * 255);
             mEmptyMessagePaint.setAlpha(alphaInt);
