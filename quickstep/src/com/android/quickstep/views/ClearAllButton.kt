@@ -42,10 +42,12 @@ constructor(
 
     private val clearAllButtonAlpha =
         object : MultiValueAlpha(this, Alpha.entries.size) {
-            // Never shown: clear all sits beside screenshot in the overview actions
+            // Never shown: clear all sits beside screenshot in the overview actions. Nor a stop
+            // for the wheel past the last app, where its ring, the button unseen, showed nowhere
             override fun apply(value: Float) {
                 super.apply(0f)
                 isClickable = false
+                isFocusable = false
             }
         }
     var scrollAlpha by MultiPropertyDelegate(clearAllButtonAlpha, Alpha.SCROLL)
