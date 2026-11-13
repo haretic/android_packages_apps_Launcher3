@@ -867,6 +867,12 @@ public class CellLayout extends ViewGroup {
     public void pointToCellExact(int x, int y, int[] result) {
         final int hStartPadding = getPaddingLeft();
         final int vStartPadding = getPaddingTop();
+        if (mShortcutsAndWidgets.isSplit()) {
+            result[0] = 0;
+            result[1] = mShortcutsAndWidgets.splitPointToCellY(
+                    x - hStartPadding, y - vStartPadding);
+            return;
+        }
 
         result[0] = (x - hStartPadding) / (mCellWidth + mBorderSpace.x);
         result[1] = (y - vStartPadding) / (mCellHeight + mBorderSpace.y);
@@ -1291,6 +1297,15 @@ public class CellLayout extends ViewGroup {
         // For items with a spanX / spanY > 1, the passed in point (relativeXPos, relativeYPos)
         // corresponds to the center of the item, but we are searching based on the top-left cell,
         // so we translate the point over to correspond to the top-left.
+        if (mShortcutsAndWidgets.isSplit()) {
+            // The list home in landscape: the point's row in the two columns, as the point at the
+            // middle of that row in the one column the cells are counted in
+            final int cellY = mShortcutsAndWidgets.splitPointToCellY(
+                    relativeXPos - getPaddingLeft(), relativeYPos - getPaddingTop());
+            relativeXPos = getPaddingLeft() + mCellWidth / 2;
+            relativeYPos = getPaddingTop() + cellY * (mCellHeight + mBorderSpace.y)
+                    + mCellHeight / 2;
+        }
         relativeXPos = (int) (relativeXPos - (mCellWidth + mBorderSpace.x) * (spanX - 1) / 2f);
         relativeYPos = (int) (relativeYPos - (mCellHeight + mBorderSpace.y) * (spanY - 1) / 2f);
 
@@ -1863,6 +1878,12 @@ public class CellLayout extends ViewGroup {
      * @param resultRect Rect into which to put the results
      */
     public void cellToRect(int cellX, int cellY, int cellHSpan, int cellVSpan, Rect resultRect) {
+        if (mShortcutsAndWidgets.isSplit()) {
+            // Where the list home shows the cell in landscape, in its two columns
+            mShortcutsAndWidgets.splitCellRect(cellY, cellVSpan, resultRect);
+            resultRect.offset(getPaddingLeft(), getPaddingTop());
+            return;
+        }
         final int cellWidth = mCellWidth;
         final int cellHeight = mCellHeight;
 

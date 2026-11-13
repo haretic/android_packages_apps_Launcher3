@@ -141,6 +141,7 @@ public class ShortcutAndWidgetContainer extends ViewGroup implements FolderIcon.
             lp.setup(mCellWidth, mCellHeight, invertLayoutHorizontally(), mCountX, mCountY,
                     mBorderSpace);
         }
+        splitForLandscape(child, lp);
     }
 
     // Set whether or not to invert the layout horizontally if the layout is in RTL mode.
@@ -167,27 +168,62 @@ public class ShortcutAndWidgetContainer extends ViewGroup implements FolderIcon.
      * cells stay as they are, so the wheel goes through the rows in the same order either way.
      */
     private void splitForLandscape(View child, CellLayoutLayoutParams lp) {
-        if (mContainerType != WORKSPACE || mCountX != 1 || mCountY < 2
-                || !WheelHome.enabled(getContext())
-                || !isWheelListSplit(mActivity.getDeviceProfile())) {
+        if (!isSplit()) {
             return;
         }
+        splitCellRect(lp.getCellY(), lp.cellVSpan, mTmpSplitRect);
+        lp.x = mTmpSplitRect.left;
+        lp.width = mTmpSplitRect.width();
+        lp.y = mTmpSplitRect.top;
+        lp.height = mTmpSplitRect.height();
+    }
+
+    private final android.graphics.Rect mTmpSplitRect = new android.graphics.Rect();
+
+    /** Whether this page shows its rows in the two landscape columns of the list home. */
+    boolean isSplit() {
+        return mContainerType == WORKSPACE && mCountX == 1 && mCountY >= 2
+                && WheelHome.enabled(getContext())
+                && isWheelListSplit(mActivity.getDeviceProfile());
+    }
+
+    private int splitColumnWidth() {
+        final int gap = getResources().getDimensionPixelSize(R.dimen.r1_list_column_gap);
+        return (mCellWidth * mCountX - gap) / 2;
+    }
+
+    private int splitRowPitch() {
+        final int half = (mCountY + 1) / 2;
+        final int height = mCellHeight * mCountY + mBorderSpace.y * (mCountY - 1);
+        // Rows keep their portrait height, stacked from the top, as long as they fit
+        return Math.min(splitRowHeight(getResources()),
+                (height - mBorderSpace.y * (half - 1)) / half) + mBorderSpace.y;
+    }
+
+    /**
+     * Where rows cellY to cellY + span - 1 show in the two landscape columns, relative to this
+     * container: the first half of the rows on the left, the rest on the right.
+     */
+    void splitCellRect(int cellY, int span, android.graphics.Rect out) {
         final int half = (mCountY + 1) / 2;
         final int gap = getResources().getDimensionPixelSize(R.dimen.r1_list_column_gap);
-        final int width = mCellWidth * mCountX;
-        final int height = mCellHeight * mCountY + mBorderSpace.y * (mCountY - 1);
-        final int columnWidth = (width - gap) / 2;
-        // Rows keep their portrait height, stacked from the top, as long as they fit
-        final int rowHeight = Math.min(splitRowHeight(getResources()),
-                (height - mBorderSpace.y * (half - 1)) / half);
-        final int cellY = lp.getCellY();
+        final int columnWidth = splitColumnWidth();
+        final int pitch = splitRowPitch();
         final int column = cellY >= half ? 1 : 0;
         final int row = cellY - column * half;
-        final int span = Math.max(1, Math.min(lp.cellVSpan, half - row));
-        lp.x = column * (columnWidth + gap);
-        lp.width = columnWidth;
-        lp.y = row * (rowHeight + mBorderSpace.y);
-        lp.height = span * rowHeight + (span - 1) * mBorderSpace.y;
+        span = Math.max(1, Math.min(span, half - row));
+        final int x = column * (columnWidth + gap);
+        final int y = row * pitch;
+        out.set(x, y, x + columnWidth, y + span * pitch - mBorderSpace.y);
+    }
+
+    /** The row under a point of this container in the two landscape columns. */
+    int splitPointToCellY(int x, int y) {
+        final int half = (mCountY + 1) / 2;
+        final int gap = getResources().getDimensionPixelSize(R.dimen.r1_list_column_gap);
+        final int column = x >= splitColumnWidth() + gap / 2 ? 1 : 0;
+        final int row = Math.max(0, Math.min(half - 1, y / splitRowPitch()));
+        return Math.min(mCountY - 1, column * half + row);
     }
 
     /** The height of a row of the list home's two landscape columns: a portrait tile's. */
