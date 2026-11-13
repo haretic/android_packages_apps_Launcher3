@@ -153,6 +153,48 @@ public class ShortcutAndWidgetContainer extends ViewGroup implements FolderIcon.
                 mActivity.getDeviceProfile().getCellContentHeight(mContainerType));
     }
 
+    /**
+     * Whether the wheel's list home shows in two columns: in landscape, its one column of rows
+     * split in two, the first half of the rows on the left and the rest on the right.
+     */
+    public static boolean isWheelListSplit(DeviceProfile dp) {
+        return dp.getDeviceProperties().isLandscape() && dp.inv.numColumns == 1
+                && dp.inv.dbFile != null && dp.inv.dbFile.startsWith("launcher_r1_list_");
+    }
+
+    /**
+     * Moves an item of the list home's workspace to its place in the two landscape columns. The
+     * cells stay as they are, so the wheel goes through the rows in the same order either way.
+     */
+    private void splitForLandscape(View child, CellLayoutLayoutParams lp) {
+        if (mContainerType != WORKSPACE || mCountX != 1 || mCountY < 2
+                || !WheelHome.enabled(getContext())
+                || !isWheelListSplit(mActivity.getDeviceProfile())) {
+            return;
+        }
+        final int half = (mCountY + 1) / 2;
+        final int gap = getResources().getDimensionPixelSize(R.dimen.r1_list_column_gap);
+        final int width = mCellWidth * mCountX;
+        final int height = mCellHeight * mCountY + mBorderSpace.y * (mCountY - 1);
+        final int columnWidth = (width - gap) / 2;
+        // Rows keep their portrait height, stacked from the top, as long as they fit
+        final int rowHeight = Math.min(splitRowHeight(getResources()),
+                (height - mBorderSpace.y * (half - 1)) / half);
+        final int cellY = lp.getCellY();
+        final int column = cellY >= half ? 1 : 0;
+        final int row = cellY - column * half;
+        final int span = Math.max(1, Math.min(lp.cellVSpan, half - row));
+        lp.x = column * (columnWidth + gap);
+        lp.width = columnWidth;
+        lp.y = row * (rowHeight + mBorderSpace.y);
+        lp.height = span * rowHeight + (span - 1) * mBorderSpace.y;
+    }
+
+    /** The height of a row of the list home's two landscape columns: a portrait tile's. */
+    public static int splitRowHeight(android.content.res.Resources res) {
+        return res.getDimensionPixelSize(R.dimen.r1_list_row_height);
+    }
+
     public void measureChild(View child) {
         CellLayoutLayoutParams lp = (CellLayoutLayoutParams) child.getLayoutParams();
         final DeviceProfile dp = mActivity.getDeviceProfile();
@@ -199,6 +241,7 @@ public class ShortcutAndWidgetContainer extends ViewGroup implements FolderIcon.
                 child.setPadding(cellPaddingX, cellPaddingY, cellPaddingX, 0);
             }
         }
+        splitForLandscape(child, lp);
         int childWidthMeasureSpec = MeasureSpec.makeMeasureSpec(lp.width, MeasureSpec.EXACTLY);
         int childheightMeasureSpec = MeasureSpec.makeMeasureSpec(lp.height, MeasureSpec.EXACTLY);
         child.measure(childWidthMeasureSpec, childheightMeasureSpec);

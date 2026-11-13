@@ -361,8 +361,13 @@ public class WheelHomeTabs extends View implements Insettable, PagedView.PageSwi
     public void setInsets(Rect insets) {
         final FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) getLayoutParams();
         lp.gravity = Gravity.TOP;
-        lp.height = dp(48);
-        lp.topMargin = insets.top + dp(8);
+        // Half as tall in landscape, where the height is scarce
+        final boolean landscape =
+                mLauncher.getDeviceProfile().getDeviceProperties().isLandscape();
+        lp.height = landscape
+                ? getResources().getDimensionPixelSize(R.dimen.r1_home_tabs_height_land)
+                : dp(48);
+        lp.topMargin = insets.top + dp(landscape ? 4 : 8);
         lp.leftMargin = insets.left + dp(20);
         lp.rightMargin = insets.right + dp(20);
         setLayoutParams(lp);

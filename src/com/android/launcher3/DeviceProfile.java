@@ -1754,8 +1754,12 @@ public class DeviceProfile {
                 throw new IllegalArgumentException("Window bounds not set");
             }
             if (mTransposeLayoutWithOrientation == null) {
+                // The wheel's list home keeps its bottom bar at the bottom in landscape, under
+                // the right of its two columns (ShortcutAndWidgetContainer)
                 mTransposeLayoutWithOrientation =
-                        !(mInfo.isLargeScreen(mWindowBounds) || mInv.isFixedLandscape);
+                        !(mInfo.isLargeScreen(mWindowBounds) || mInv.isFixedLandscape
+                                || (mInv.dbFile != null
+                                        && mInv.dbFile.startsWith("launcher_r1_list_")));
             }
             if (mIsGestureMode == null) {
                 mIsGestureMode = mInfo.getNavigationMode().hasGestures;

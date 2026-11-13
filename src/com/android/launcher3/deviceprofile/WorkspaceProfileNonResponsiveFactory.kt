@@ -236,7 +236,9 @@ object WorkspaceProfileNonResponsiveFactory {
                 // Room for the wheel home's tabs (WheelHomeTabs) over the list
                 workspaceTopPadding =
                     if (inv.dbFile.startsWith("launcher_r1_list_"))
-                        res.getDimensionPixelSize(R.dimen.r1_home_tabs_space)
+                        res.getDimensionPixelSize(
+                        if (deviceProperties.isLandscape) R.dimen.r1_home_tabs_space_land
+                        else R.dimen.r1_home_tabs_space)
                     else 0,
                 workspaceBottomPadding = 0,
                 iconSize = iconSizePx,
@@ -303,7 +305,9 @@ object WorkspaceProfileNonResponsiveFactory {
             // Kept, as the padding is worked out again from it (recalculateWorkspacePadding)
             workspaceTopPadding =
                 if (inv.dbFile.startsWith("launcher_r1_list_"))
-                    res.getDimensionPixelSize(R.dimen.r1_home_tabs_space)
+                    res.getDimensionPixelSize(
+                        if (deviceProperties.isLandscape) R.dimen.r1_home_tabs_space_land
+                        else R.dimen.r1_home_tabs_space)
                 else 0,
             workspaceBottomPadding = 0,
             maxEmptySpace = 0,
@@ -441,7 +445,9 @@ object WorkspaceProfileNonResponsiveFactory {
                 // Room for the wheel home's tabs (WheelHomeTabs) over the list
                 workspaceTopPadding =
                     if (inv.dbFile.startsWith("launcher_r1_list_"))
-                        res.getDimensionPixelSize(R.dimen.r1_home_tabs_space)
+                        res.getDimensionPixelSize(
+                        if (deviceProperties.isLandscape) R.dimen.r1_home_tabs_space_land
+                        else R.dimen.r1_home_tabs_space)
                     else 0,
                 workspaceBottomPadding = 0,
                 iconSize = iconSizePx,
@@ -507,7 +513,9 @@ object WorkspaceProfileNonResponsiveFactory {
             // Kept, as the padding is worked out again from it (recalculateWorkspacePadding)
             workspaceTopPadding =
                 if (inv.dbFile.startsWith("launcher_r1_list_"))
-                    res.getDimensionPixelSize(R.dimen.r1_home_tabs_space)
+                    res.getDimensionPixelSize(
+                        if (deviceProperties.isLandscape) R.dimen.r1_home_tabs_space_land
+                        else R.dimen.r1_home_tabs_space)
                 else 0,
             workspaceBottomPadding = 0,
             maxEmptySpace = 0,
