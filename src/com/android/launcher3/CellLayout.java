@@ -1297,17 +1297,13 @@ public class CellLayout extends ViewGroup {
         // For items with a spanX / spanY > 1, the passed in point (relativeXPos, relativeYPos)
         // corresponds to the center of the item, but we are searching based on the top-left cell,
         // so we translate the point over to correspond to the top-left.
-        if (mShortcutsAndWidgets.isSplit()) {
-            // The list home in landscape: the point's row in the two columns, as the point at the
-            // middle of that row in the one column the cells are counted in
-            final int cellY = mShortcutsAndWidgets.splitPointToCellY(
-                    relativeXPos - getPaddingLeft(), relativeYPos - getPaddingTop());
-            relativeXPos = getPaddingLeft() + mCellWidth / 2;
-            relativeYPos = getPaddingTop() + cellY * (mCellHeight + mBorderSpace.y)
-                    + mCellHeight / 2;
+        // The list home in landscape shows the cells in two columns: there the point stays the
+        // item's centre and is compared with where each candidate area shows, see below
+        final boolean split = mShortcutsAndWidgets.isSplit();
+        if (!split) {
+            relativeXPos = (int) (relativeXPos - (mCellWidth + mBorderSpace.x) * (spanX - 1) / 2f);
+            relativeYPos = (int) (relativeYPos - (mCellHeight + mBorderSpace.y) * (spanY - 1) / 2f);
         }
-        relativeXPos = (int) (relativeXPos - (mCellWidth + mBorderSpace.x) * (spanX - 1) / 2f);
-        relativeYPos = (int) (relativeYPos - (mCellHeight + mBorderSpace.y) * (spanY - 1) / 2f);
 
         // Keep track of best-scoring drop area
         final int[] bestXY = result != null ? result : new int[2];
@@ -1374,7 +1370,11 @@ public class CellLayout extends ViewGroup {
                     }
                 }
                 final int[] cellXY = mTmpPoint;
-                cellToCenterPoint(x, y, cellXY);
+                if (split) {
+                    regionToCenterPoint(x, y, spanX, spanY, cellXY);
+                } else {
+                    cellToCenterPoint(x, y, cellXY);
+                }
 
                 // We verify that the current rect is not a sub-rect of any of our previous
                 // candidates. In this case, the current rect is disqualified in favour of the
