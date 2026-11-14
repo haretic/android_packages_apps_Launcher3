@@ -296,8 +296,13 @@ public class WheelHomeStats extends View implements Insettable, PagedView.PageSw
         }
         final ActivityManager.MemoryInfo info = new ActivityManager.MemoryInfo();
         am.getMemoryInfo(info);
-        mRamTotalMb = (int) (info.totalMem >> 20);
-        mRamUsedMb = (int) ((info.totalMem - info.availMem) >> 20);
+        // The memory the r1 is sold with, as Settings shows it: the size up to the next whole
+        // gigabyte, so what the hardware keeps for itself counts as used, not as missing
+        final long gigabyte = 1L << 30;
+        final long known = Math.max(info.advertisedMem, info.totalMem);
+        final long total = (known + gigabyte - 1) / gigabyte * gigabyte;
+        mRamTotalMb = (int) (total >> 20);
+        mRamUsedMb = (int) ((total - info.availMem) >> 20);
     }
 
     /** "+4.6 W" while charging, "-1.9 W" on battery, "USB power" plugged in and not charging. */
@@ -310,7 +315,8 @@ public class WheelHomeStats extends View implements Insettable, PagedView.PageSw
     }
 
     private static String gigabytes(int mb) {
-        return String.format(Locale.US, "%.1f", mb / 1024f);
+        final String text = String.format(Locale.US, "%.1f", mb / 1024f);
+        return text.endsWith(".0") ? text.substring(0, text.length() - 2) : text;
     }
 
     @Override
