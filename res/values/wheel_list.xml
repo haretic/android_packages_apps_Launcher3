@@ -7,9 +7,11 @@
     <dimen name="r1_workspace_page_indicator_height">16dp</dimen>
     <!-- The tabs' 48dp, 8dp over them and 8dp under -->
     <dimen name="r1_home_tabs_space">64dp</dimen>
-    <!-- In landscape the tabs are half as tall: 24dp, 4dp over them and 4dp under -->
-    <dimen name="r1_home_tabs_height_land">24dp</dimen>
-    <dimen name="r1_home_tabs_space_land">32dp</dimen>
+    <!-- In landscape the tabs are lower: 34dp, 4dp over them and 6dp under -->
+    <dimen name="r1_home_tabs_height_land">34dp</dimen>
+    <dimen name="r1_home_tabs_space_land">44dp</dimen>
+    <!-- Under the last row of the list home's landscape columns -->
+    <dimen name="r1_list_bottom_space_land">10dp</dimen>
     <!-- A row of the list home, which a landscape column's taller rows centre their tiles in -->
     <dimen name="r1_list_row_height">86dp</dimen>
     <!-- Between the two columns of the list home in landscape -->

@@ -57,6 +57,14 @@
             android:layout_height="48dp"
             android:visibility="gone" />
 
+        <!-- The wheel home's status tile beside the dock in landscape, shown by itself where
+             it applies -->
+        <com.android.launcher3.WheelHomeStats
+            android:id="@+id/wheel_home_stats"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="gone" />
+
         <!-- Keep these behind the workspace so that they are not visible when
          we go into AllApps -->
 

@@ -172,6 +172,20 @@ public class ShortcutAndWidgetContainer extends ViewGroup implements FolderIcon.
             return;
         }
         splitCellRect(lp.getCellY(), lp.cellVSpan, mTmpSplitRect);
+        if (child instanceof NavigableAppWidgetHostView && findTallWidget() == lp) {
+            // As large as in portrait, so it lays out as there, in the middle of the column:
+            // layoutChild scales it down into the column
+            final DeviceProfile dp = mActivity.getDeviceProfile();
+            final int side = mTmpSplitRect.right + mTmpSplitRect.right
+                    + getResources().getDimensionPixelSize(R.dimen.r1_list_column_gap);
+            lp.width = Math.min(dp.getDeviceProperties().getWidthPx(),
+                    dp.getDeviceProperties().getHeightPx())
+                    - (dp.getDeviceProperties().getWidthPx() - side);
+            lp.height = lp.cellVSpan * splitRowHeight(getResources());
+            lp.x = mTmpSplitRect.centerX() - lp.width / 2;
+            lp.y = mTmpSplitRect.centerY() - lp.height / 2;
+            return;
+        }
         lp.x = mTmpSplitRect.left;
         lp.width = mTmpSplitRect.width();
         lp.y = mTmpSplitRect.top;
@@ -193,11 +207,27 @@ public class ShortcutAndWidgetContainer extends ViewGroup implements FolderIcon.
     }
 
     private int splitRowPitch() {
-        final int half = (mCountY + 1) / 2;
-        final int height = mCellHeight * mCountY + mBorderSpace.y * (mCountY - 1);
-        // Rows keep their portrait height, stacked from the top, as long as they fit
-        return Math.min(splitRowHeight(getResources()),
-                (height - mBorderSpace.y * (half - 1)) / half) + mBorderSpace.y;
+        return splitRowPitch(mActivity.getDeviceProfile(), getResources());
+    }
+
+    /**
+     * The distance between the rows of the list home's two landscape columns: the right column's
+     * rows and the dock under them share the height under the tabs.
+     */
+    public static int splitRowPitch(DeviceProfile dp, android.content.res.Resources res) {
+        final int half = (dp.inv.numRows + 1) / 2;
+        final int available = dp.getDeviceProperties().getHeightPx() - splitCellsTop(dp)
+                - res.getDimensionPixelSize(R.dimen.r1_list_bottom_space_land);
+        // Up to half again a portrait row, so a short page does not get giant tiles
+        return Math.max(splitRowHeight(res) / 2,
+                Math.min(available / (half + 1), splitRowHeight(res) * 3 / 2));
+    }
+
+    /** Where the rows of the list home's landscape columns start, from the top of the screen. */
+    public static int splitCellsTop(DeviceProfile dp) {
+        return dp.getDeviceProperties().getInsets().top
+                + dp.getWorkspaceProfile().getWorkspacePadding().top
+                + dp.getWorkspaceProfile().getCellLayoutPaddingPx().top;
     }
 
     /**
@@ -209,6 +239,20 @@ public class ShortcutAndWidgetContainer extends ViewGroup implements FolderIcon.
         final int gap = getResources().getDimensionPixelSize(R.dimen.r1_list_column_gap);
         final int columnWidth = splitColumnWidth();
         final int pitch = splitRowPitch();
+        final CellLayoutLayoutParams tall = findTallWidget();
+        if (tall != null) {
+            // A widget of more rows than a column holds is alone on the left, down to the
+            // bottom; the page's other rows stack down the right in their order, over the dock
+            final int top = tall.getCellY();
+            if (cellY >= top && cellY < top + tall.cellVSpan) {
+                out.set(0, 0, columnWidth, (half + 1) * pitch - mBorderSpace.y);
+                return;
+            }
+            final int index = cellY < top ? cellY : cellY - tall.cellVSpan;
+            final int y = index * pitch;
+            out.set(columnWidth + gap, y, 2 * columnWidth + gap, y + pitch - mBorderSpace.y);
+            return;
+        }
         final int column = cellY >= half ? 1 : 0;
         final int row = cellY - column * half;
         span = Math.max(1, Math.min(span, half - row));
@@ -217,11 +261,58 @@ public class ShortcutAndWidgetContainer extends ViewGroup implements FolderIcon.
         out.set(x, y, x + columnWidth, y + span * pitch - mBorderSpace.y);
     }
 
+    /** The widget of this page of more rows than a landscape column holds, if there is one. */
+    private CellLayoutLayoutParams findTallWidget() {
+        final int half = (mCountY + 1) / 2;
+        for (int i = 0; i < getChildCount(); i++) {
+            final View child = getChildAt(i);
+            if (child instanceof NavigableAppWidgetHostView
+                    && child.getLayoutParams() instanceof CellLayoutLayoutParams lp
+                    && lp.cellVSpan > half) {
+                return lp;
+            }
+        }
+        return null;
+    }
+
+    /** Whether a widget has the left landscape column of this page of the list home to itself. */
+    public boolean hasTallWidget() {
+        return isSplit() && findTallWidget() != null;
+    }
+
+    /**
+     * The last slot of a landscape column of the list home, under its rows, in the launcher's
+     * window: the dock's, and the status tile's beside it.
+     */
+    public static void splitBottomSlot(DeviceProfile dp, android.content.res.Resources res,
+            boolean right, android.graphics.Rect out) {
+        final com.android.launcher3.deviceprofile.WorkspaceProfile wp = dp.getWorkspaceProfile();
+        final android.graphics.Rect insets = dp.getDeviceProperties().getInsets();
+        final int left = insets.left + wp.getWorkspacePadding().left
+                + wp.getCellLayoutPaddingPx().left;
+        final int end = dp.getDeviceProperties().getWidthPx() - insets.right
+                - wp.getWorkspacePadding().right - wp.getCellLayoutPaddingPx().right;
+        final int gap = res.getDimensionPixelSize(R.dimen.r1_list_column_gap);
+        final int columnWidth = (end - left - gap) / 2;
+        final int pitch = splitRowPitch(dp, res);
+        final int x = left + (right ? columnWidth + gap : 0);
+        final int y = splitCellsTop(dp) + ((dp.inv.numRows + 1) / 2) * pitch;
+        out.set(x, y, x + columnWidth, y + pitch - wp.getCellLayoutBorderSpacePx().y);
+    }
+
     /** The row under a point of this container in the two landscape columns. */
     int splitPointToCellY(int x, int y) {
         final int half = (mCountY + 1) / 2;
         final int gap = getResources().getDimensionPixelSize(R.dimen.r1_list_column_gap);
         final int column = x >= splitColumnWidth() + gap / 2 ? 1 : 0;
+        final CellLayoutLayoutParams tall = findTallWidget();
+        if (tall != null) {
+            final int top = tall.getCellY();
+            final int others = mCountY - tall.cellVSpan;
+            if (column == 0 || others <= 0) return top;
+            final int index = Math.max(0, Math.min(others - 1, y / splitRowPitch()));
+            return index < top ? index : index + tall.cellVSpan;
+        }
         final int row = Math.max(0, Math.min(half - 1, y / splitRowPitch()));
         return Math.min(mCountY - 1, column * half + row);
     }
@@ -324,6 +415,15 @@ public class ShortcutAndWidgetContainer extends ViewGroup implements FolderIcon.
             nahv.getTranslateDelegate().setTranslation(INDEX_WIDGET_CENTERING,
                     -(lp.width - (lp.width * scaleX)) / 2.0f,
                     -(lp.height - (lp.height * scaleY)) / 2.0f);
+            if (isSplit() && findTallWidget() == lp) {
+                // At its portrait size around the middle of the left column (splitForLandscape):
+                // scaled about that middle to fit the column, its proportions kept
+                splitCellRect(lp.getCellY(), lp.cellVSpan, mTmpSplitRect);
+                nahv.setScaleToFit(Math.min(1f, Math.min(
+                        mTmpSplitRect.width() / (float) lp.width,
+                        mTmpSplitRect.height() / (float) lp.height)));
+                nahv.getTranslateDelegate().setTranslation(INDEX_WIDGET_CENTERING, 0f, 0f);
+            }
         }
 
         int childLeft = lp.x;

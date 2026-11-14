@@ -1,6 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+    <!-- The wheel home's status tile in landscape (WheelHomeStats): the labels of its three
+         values, the lines under them, and what a screen reader says of it -->
+    <string name="wheel_home_stats_battery">Battery</string>
+    <string name="wheel_home_stats_temp">Temp</string>
+    <string name="wheel_home_stats_ram">RAM</string>
+    <string name="wheel_home_stats_usb_power">USB power</string>
+    <string name="wheel_home_stats_temp_of">battery</string>
+    <string name="wheel_home_stats_ram_of">of <xliff:g id="total" example="3.5">%1$s</xliff:g> G</string>
+    <string name="wheel_home_stats_description">Battery <xliff:g id="percent" example="87%">%1$s</xliff:g>, <xliff:g id="temperature" example="31°C">%2$s</xliff:g>, memory used <xliff:g id="used" example="1.9 G">%3$s</xliff:g></string>
+    <!-- Home settings: where that tile goes in landscape, beside the pinned app at the bottom -->
+    <string name="wheel_home_stats_pref_title">Status tile in landscape</string>
+    <string name="wheel_home_stats_pref_left">Left of the pinned app</string>
+    <string name="wheel_home_stats_pref_right">Right of the pinned app</string>
+    <string name="wheel_home_stats_pref_off">Hidden</string>
+    <string-array name="wheel_home_stats_pref_entries">
+        <item>@string/wheel_home_stats_pref_left</item>
+        <item>@string/wheel_home_stats_pref_right</item>
+        <item>@string/wheel_home_stats_pref_off</item>
+    </string-array>
+    <string-array name="wheel_home_stats_pref_values" translatable="false">
+        <item>left</item>
+        <item>right</item>
+        <item>off</item>
+    </string-array>
     <!-- The wheel home's tabs (WheelHomeTabs): the first tab's name until it's given one -->
     <string name="wheel_home_tab_first">Home</string>
     <!-- The name of an empty tab after the first until it is given one; others take their first app's -->

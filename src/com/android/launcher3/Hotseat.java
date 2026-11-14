@@ -38,7 +38,6 @@ import androidx.annotation.IntDef;
 import androidx.annotation.Nullable;
 
 import com.android.launcher3.ShortcutAndWidgetContainer.TranslationProvider;
-import com.android.launcher3.deviceprofile.WorkspaceProfile;
 import com.android.launcher3.celllayout.CellLayoutLayoutParams;
 import com.android.launcher3.dagger.LauncherComponentProvider;
 import com.android.launcher3.dragndrop.SystemDragItemInfo;
@@ -292,28 +291,48 @@ public class Hotseat extends CellLayout implements Insettable {
         }
 
         Rect padding = grid.getHotseatLayoutPadding(getContext());
+        mSplitInsets.set(insets);
         if (ShortcutAndWidgetContainer.isWheelListSplit(grid)) {
-            // The next row of the right of the list home's two columns, right under its rows
-            final WorkspaceProfile wp = grid.getWorkspaceProfile();
-            final Rect cells = new Rect(wp.getWorkspacePadding());
-            cells.left += wp.getCellLayoutPaddingPx().left;
-            cells.right += wp.getCellLayoutPaddingPx().right;
-            final int gap = getResources().getDimensionPixelSize(R.dimen.r1_list_column_gap);
-            final int width = grid.getDeviceProperties().getWidthPx() - cells.left - cells.right;
-            final int row = ShortcutAndWidgetContainer.splitRowHeight(getResources());
-            final int rows = (grid.inv.numRows + 1) / 2;
-            padding.set(cells.left + (width + gap) / 2, 0, cells.right, 0);
-            lp.gravity = Gravity.TOP;
-            lp.height = row;
-            lp.topMargin = insets.top + wp.getWorkspacePadding().top
-                    + wp.getCellLayoutPaddingPx().top
-                    + rows * (row + wp.getCellLayoutBorderSpacePx().y);
+            // The list home in landscape: the last slot of one of its two columns, under its
+            // rows. The right one, or the left with the status tile set to its right; beside a
+            // widget that has the left column to itself, always the right
+            final Rect slot = new Rect();
+            ShortcutAndWidgetContainer.splitBottomSlot(grid, getResources(),
+                    WheelHomeStats.dockOnRight(getContext(), isTallWidgetPage()), slot);
+            padding.set(0, 0, 0, 0);
+            lp.gravity = Gravity.TOP | Gravity.LEFT;
+            lp.width = slot.width();
+            lp.height = slot.height();
+            lp.leftMargin = slot.left;
+            lp.topMargin = slot.top;
         } else {
+            lp.leftMargin = 0;
             lp.topMargin = 0;
         }
         setPadding(padding.left, padding.top, padding.right, padding.bottom);
         setLayoutParams(lp);
         InsettableFrameLayout.dispatchInsets(this, insets);
+    }
+
+    private final Rect mSplitInsets = new Rect();
+
+    /** Whether the page showing gives its left landscape column to a tall widget. */
+    private boolean isTallWidgetPage() {
+        if (mWorkspace == null) {
+            return false;
+        }
+        final View page = mWorkspace.getPageAt(mWorkspace.getNextPage());
+        return page instanceof CellLayout cl && cl.getShortcutsAndWidgets().hasTallWidget();
+    }
+
+    /**
+     * Places the dock again in the list home's landscape columns, as the page showing or the
+     * status tile's side changed.
+     */
+    public void updateSplitPlacement() {
+        if (ShortcutAndWidgetContainer.isWheelListSplit(mActivity.getDeviceProfile())) {
+            setInsets(new Rect(mSplitInsets));
+        }
     }
 
     public void setWorkspace(Workspace<?> w) {

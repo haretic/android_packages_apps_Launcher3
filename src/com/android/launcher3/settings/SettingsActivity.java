@@ -61,6 +61,8 @@ import com.android.launcher3.BuildConfig;
 import com.android.launcher3.InvariantDeviceProfile;
 import com.android.launcher3.LauncherFiles;
 import com.android.launcher3.R;
+import com.android.launcher3.WheelHome;
+import com.android.launcher3.WheelHomeStats;
 import com.android.launcher3.display.DisplayController;
 import com.android.launcher3.display.LauncherDisplayInfo;
 import com.android.launcher3.lineage.LineageUtils;
@@ -341,6 +343,10 @@ public class SettingsActivity extends FragmentActivity
             switch (preference.getKey()) {
                 case NOTIFICATION_DOTS_PREFERENCE_KEY:
                     return BuildConfig.NOTIFICATION_DOTS_ENABLED;
+                case WheelHomeStats.PREF_SIDE:
+                    // The wheel's list home has the tile, in landscape
+                    return getResources().getBoolean(R.bool.config_r1ListHome)
+                            && WheelHome.enabled(getContext());
                 case DEVELOPER_OPTIONS_KEY:
                     if (IS_STUDIO_BUILD) {
                         preference.setOrder(0);

@@ -33,6 +33,15 @@
         android:title="@string/pref_sleep_gesture_title"
         android:summary="@string/pref_sleep_gesture_summary" />
 
+    <ListPreference
+        android:defaultValue="left"
+        android:key="pref_r1_landscape_stats"
+        android:persistent="true"
+        android:title="@string/wheel_home_stats_pref_title"
+        android:entries="@array/wheel_home_stats_pref_entries"
+        android:entryValues="@array/wheel_home_stats_pref_values"
+        android:summary="%s" />
+
     <com.android.launcher3.settings.NotificationDotsPreference
         android:key="pref_icon_badging"
         android:title="@string/notification_dots_title"

@@ -50,6 +50,25 @@ import kotlin.math.min
  */
 object WorkspaceProfileNonResponsiveFactory {
 
+    /**
+     * The space under the r1 list home's pages in landscape, or -1 where it does not apply:
+     * there its two columns go down to the bottom, the dock in the last slot of one of them
+     * (ShortcutAndWidgetContainer.isWheelListSplit), not on a bar of its own under the pages.
+     */
+    fun r1SplitBottomPx(
+        inv: InvariantDeviceProfile,
+        deviceProperties: DeviceProperties,
+        res: Resources,
+    ): Int =
+        if (
+            deviceProperties.isLandscape &&
+                inv.numColumns == 1 &&
+                inv.dbFile != null &&
+                inv.dbFile.startsWith("launcher_r1_list_")
+        )
+            res.getDimensionPixelSize(R.dimen.r1_list_bottom_space_land)
+        else -1
+
     fun createWorkspacePadding(
         isVerticalLayout: Boolean,
         isSeascape: Boolean,
@@ -66,6 +85,7 @@ object WorkspaceProfileNonResponsiveFactory {
         hotseatProfile: HotseatProfileInitialValues,
         hotseatBarBottomSpacePx: Int,
         hotseatQsbSpace: Int,
+        r1SplitBottomPx: Int = -1,
     ): Rect {
         // TODO : This is to update updateHotseatSizes, we need a better way to do
         // this
@@ -97,9 +117,12 @@ object WorkspaceProfileNonResponsiveFactory {
                     /*Right */
                     desiredWorkspaceHorizontalMarginPx,
                     /*Bottom */
-                    (hotseatBarSizePx - insets.bottom) +
-                        workspaceBottomPadding +
-                        (workspacePageIndicatorHeight - workspacePageIndicatorOverlapWorkspace),
+                    if (r1SplitBottomPx >= 0) max(0, r1SplitBottomPx - insets.bottom)
+                    else
+                        (hotseatBarSizePx - insets.bottom) +
+                            workspaceBottomPadding +
+                            (workspacePageIndicatorHeight -
+                                workspacePageIndicatorOverlapWorkspace),
                 )
 
             // In fixed Landscape we don't need padding on the side next to the cutout because
@@ -241,6 +264,7 @@ object WorkspaceProfileNonResponsiveFactory {
                         else R.dimen.r1_home_tabs_space)
                     else 0,
                 workspaceBottomPadding = 0,
+                r1SplitBottomPx = r1SplitBottomPx(inv, deviceProperties, res),
                 iconSize = iconSizePx,
                 hotseatBarBottomSpacePx = hotseatProfile.barBottomSpacePx,
                 hotseatQsbSpace = hotseatProfile.qsbSpace,
@@ -450,6 +474,7 @@ object WorkspaceProfileNonResponsiveFactory {
                         else R.dimen.r1_home_tabs_space)
                     else 0,
                 workspaceBottomPadding = 0,
+                r1SplitBottomPx = r1SplitBottomPx(inv, deviceProperties, res),
                 iconSize = iconSizePx,
                 hotseatBarBottomSpacePx = hotseatProfile.barBottomSpacePx,
                 hotseatQsbSpace = hotseatProfile.qsbSpace,

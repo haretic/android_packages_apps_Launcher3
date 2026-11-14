@@ -1205,6 +1205,8 @@ public class Launcher extends StatefulActivity<LauncherState>
 
         final WheelHomeTabs wheelTabs = mDragLayer.findViewById(R.id.wheel_home_tabs);
         wheelTabs.setup(this, mWorkspace);
+        final WheelHomeStats wheelStats = mDragLayer.findViewById(R.id.wheel_home_stats);
+        wheelStats.setup(this, mWorkspace);
 
         // Setup the drag controller (drop targets have to be added in reverse order in priority)
         mDropTargetBar.setup(mDragController);

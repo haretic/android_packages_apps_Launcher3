@@ -163,6 +163,12 @@ data class WorkspaceProfile(
                 workspacePageIndicatorOverlapWorkspace = workspacePageIndicatorOverlapWorkspace,
                 workspaceTopPadding = workspaceTopPadding,
                 workspaceBottomPadding = workspaceBottomPadding,
+                r1SplitBottomPx =
+                    WorkspaceProfileNonResponsiveFactory.r1SplitBottomPx(
+                        inv,
+                        deviceProperties,
+                        res,
+                    ),
                 hotseatBarBottomSpacePx = hotseatProfile.barBottomSpacePx,
                 hotseatQsbSpace = hotseatProfile.qsbSpace,
                 iconSize = iconSizePx,
