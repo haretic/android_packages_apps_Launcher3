@@ -450,7 +450,10 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
         val xThreshold =
             (cellLayout.cellWidth + dp.workspaceProfile.cellLayoutBorderSpacePx.x).toFloat()
         val yThreshold =
-            (cellLayout.cellHeight + dp.workspaceProfile.cellLayoutBorderSpacePx.y).toFloat()
+            (if (cellLayout.shortcutsAndWidgets.isSplit())
+                    ShortcutAndWidgetContainer.splitRowPitch(dp, resources)
+                else cellLayout.cellHeight + dp.workspaceProfile.cellLayoutBorderSpacePx.y)
+                .toFloat()
 
         val hSpanInc = getSpanIncrement((deltaX + deltaXAddOn) / xThreshold - runningHInc)
         val vSpanInc = getSpanIncrement((deltaY + deltaYAddOn) / yThreshold - runningVInc)
@@ -555,7 +558,10 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
     private fun onTouchUp() {
         val dp = launcher.deviceProfile
         val xThreshold = cellLayout.cellWidth + dp.workspaceProfile.cellLayoutBorderSpacePx.x
-        val yThreshold = cellLayout.cellHeight + dp.workspaceProfile.cellLayoutBorderSpacePx.y
+        val yThreshold =
+            if (cellLayout.shortcutsAndWidgets.isSplit())
+                ShortcutAndWidgetContainer.splitRowPitch(dp, resources)
+            else cellLayout.cellHeight + dp.workspaceProfile.cellLayoutBorderSpacePx.y
 
         deltaXAddOn = runningHInc * xThreshold
         deltaYAddOn = runningVInc * yThreshold

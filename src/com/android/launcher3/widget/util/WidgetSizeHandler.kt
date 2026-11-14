@@ -20,11 +20,14 @@ import android.appwidget.AppWidgetHostView
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetManager.OPTION_APPWIDGET_SIZES
 import android.content.Context
+import android.content.res.Configuration
 import android.graphics.Rect
 import android.os.Bundle
 import android.util.SizeF
 import com.android.launcher3.DeviceProfile
 import com.android.launcher3.InvariantDeviceProfile
+import com.android.launcher3.ShortcutAndWidgetContainer
+import com.android.launcher3.WheelHome
 import com.android.launcher3.dagger.ApplicationContext
 import com.android.launcher3.dagger.LauncherComponentProvider.appComponent
 import com.android.launcher3.graphics.theme.ThemePreference
@@ -121,7 +124,16 @@ constructor(
     fun getWidgetSizeOptions(spanX: Int, spanY: Int): Bundle {
         return getWidgetSizeOptionsInternal { profile ->
             val density = context.resources.displayMetrics.density
-            val widgetSizePx = WidgetSizes.getWidgetSizePx(profile, spanX, spanY)
+            val widgetSizePx =
+                if (
+                    spanX == 1 &&
+                        context.resources.configuration.orientation ==
+                            Configuration.ORIENTATION_LANDSCAPE &&
+                        WheelHome.enabled(context) &&
+                        ShortcutAndWidgetContainer.isWheelListSplit(profile)
+                )
+                    ShortcutAndWidgetContainer.splitWidgetSize(profile, context.resources, spanY)
+                else WidgetSizes.getWidgetSizePx(profile, spanX, spanY)
             SizeF(widgetSizePx.width / density, widgetSizePx.height / density)
         }
     }

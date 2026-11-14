@@ -1322,6 +1322,9 @@ public class CellLayout extends ViewGroup {
         for (int y = 0; y < countY - (minSpanY - 1); y++) {
             inner:
             for (int x = 0; x < countX - (minSpanX - 1); x++) {
+                if (split && ignoreOccupied && (x + spanX > countX || y + spanY > countY)) {
+                    continue;
+                }
                 int ySize = -1;
                 int xSize = -1;
                 if (!ignoreOccupied) {
@@ -1371,7 +1374,12 @@ public class CellLayout extends ViewGroup {
                 }
                 final int[] cellXY = mTmpPoint;
                 if (split) {
-                    regionToCenterPoint(x, y, spanX, spanY, cellXY);
+                    regionToCenterPoint(
+                            x,
+                            y,
+                            ignoreOccupied ? spanX : xSize,
+                            ignoreOccupied ? spanY : ySize,
+                            cellXY);
                 } else {
                     cellToCenterPoint(x, y, cellXY);
                 }

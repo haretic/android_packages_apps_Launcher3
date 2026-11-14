@@ -21,10 +21,10 @@ import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
-import android.view.View;
-import android.view.ViewGroup;
 import android.view.VelocityTracker;
+import android.view.View;
 import android.view.ViewConfiguration;
+import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
@@ -518,6 +518,18 @@ public class WheelHomeTabs extends View implements Insettable, PagedView.PageSwi
             }
         }
         return top == null ? null : top.title;
+    }
+
+    @Override
+    public View focusSearch(int direction) {
+        if (direction == FOCUS_DOWN && mWorkspace != null && WheelHome.wheelFocus(getContext())) {
+            final View page = mWorkspace.getPageAt(mWorkspace.getNextPage());
+            if (page instanceof CellLayout cl && cl.getShortcutsAndWidgets().hasTallWidget()) {
+                final View first = cl.getShortcutsAndWidgets().splitFocusEnd(false);
+                if (first != null) return first;
+            }
+        }
+        return super.focusSearch(direction);
     }
 
     @Override

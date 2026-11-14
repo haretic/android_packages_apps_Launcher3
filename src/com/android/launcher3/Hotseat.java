@@ -335,6 +335,20 @@ public class Hotseat extends CellLayout implements Insettable {
         }
     }
 
+    @Override
+    public View focusSearch(View focused, int direction) {
+        if (isTallWidgetPage()
+                && WheelHome.wheelFocus(getContext())
+                && (direction == FOCUS_UP || direction == FOCUS_LEFT)) {
+            final View page = mWorkspace.getPageAt(mWorkspace.getNextPage());
+            if (page instanceof CellLayout cl) {
+                final View last = cl.getShortcutsAndWidgets().splitFocusEnd(true);
+                if (last != null) return last;
+            }
+        }
+        return super.focusSearch(focused, direction);
+    }
+
     public void setWorkspace(Workspace<?> w) {
         mWorkspace = w;
         setCellLayoutContainer(w);

@@ -25,6 +25,7 @@ import com.android.launcher3.AppWidgetResizeFrame
 import com.android.launcher3.CellLayout
 import com.android.launcher3.DeviceProfile
 import com.android.launcher3.R
+import com.android.launcher3.ShortcutAndWidgetContainer
 import com.android.launcher3.Workspace
 import com.android.launcher3.celllayout.CellLayoutLayoutParams
 import com.android.launcher3.celllayout.CellPosMapper
@@ -651,7 +652,9 @@ class ResizeManager(
             cellWidth + deviceProfile.workspaceProfile.cellLayoutBorderSpacePx.x
 
         private fun CellLayout.cellHeightWithBorderSpace(deviceProfile: DeviceProfile) =
-            cellHeight + deviceProfile.workspaceProfile.cellLayoutBorderSpacePx.y
+            if (shortcutsAndWidgets.isSplit())
+                ShortcutAndWidgetContainer.splitRowPitch(deviceProfile, resources)
+            else cellHeight + deviceProfile.workspaceProfile.cellLayoutBorderSpacePx.y
     }
 
     /** Listener for either in-progress or committed resize events. */

@@ -44,6 +44,10 @@ import com.android.launcher3.model.data.ItemInfo;
 import com.android.launcher3.views.ActivityContext;
 import com.android.launcher3.widget.LauncherAppWidgetHostView;
 import com.android.launcher3.widget.NavigableAppWidgetHostView;
+import com.android.launcher3.widget.util.WidgetSizeHandler;
+
+import java.util.ArrayList;
+import java.util.Comparator;
 
 public class ShortcutAndWidgetContainer extends ViewGroup implements FolderIcon.FolderIconParent {
     static final String TAG = "ShortcutAndWidgetContainer";
@@ -66,6 +70,8 @@ public class ShortcutAndWidgetContainer extends ViewGroup implements FolderIcon.
     private final ActivityContext mActivity;
     private boolean mInvertIfRtl = false;
     public boolean mHasOnLayoutBeenCalled = false;
+
+    private boolean mLastSplitWidgetSizes;
 
     @Nullable
     private TranslationProvider mTranslationProvider = null;
@@ -104,6 +110,9 @@ public class ShortcutAndWidgetContainer extends ViewGroup implements FolderIcon.
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         int count = getChildCount();
+        final boolean split = isSplit();
+        final boolean updateWidgetSizes = split != mLastSplitWidgetSizes;
+        mLastSplitWidgetSizes = split;
 
         int widthSpecSize = MeasureSpec.getSize(widthMeasureSpec);
         int heightSpecSize = MeasureSpec.getSize(heightMeasureSpec);
@@ -113,6 +122,12 @@ public class ShortcutAndWidgetContainer extends ViewGroup implements FolderIcon.
             View child = getChildAt(i);
             if (child.getVisibility() != GONE) {
                 measureChild(child);
+                if (updateWidgetSizes && child instanceof LauncherAppWidgetHostView widget) {
+                    final CellLayoutLayoutParams lp =
+                            (CellLayoutLayoutParams) child.getLayoutParams();
+                    // Restore the original provider options when leaving the split layout.
+                    WidgetSizeHandler.updateSizeRanges(widget, lp.cellHSpan, lp.cellVSpan);
+                }
             }
         }
     }
@@ -171,31 +186,26 @@ public class ShortcutAndWidgetContainer extends ViewGroup implements FolderIcon.
         if (!isSplit()) {
             return;
         }
-        splitCellRect(lp.getCellY(), lp.cellVSpan, mTmpSplitRect);
-        if (child instanceof NavigableAppWidgetHostView && findTallWidget() == lp) {
-            // As large as in portrait, so it lays out as there, in the middle of the column:
-            // layoutChild scales it down into the column
-            final DeviceProfile dp = mActivity.getDeviceProfile();
-            final int side = mTmpSplitRect.right + mTmpSplitRect.right
-                    + getResources().getDimensionPixelSize(R.dimen.r1_list_column_gap);
-            lp.width = Math.min(dp.getDeviceProperties().getWidthPx(),
-                    dp.getDeviceProperties().getHeightPx())
-                    - (dp.getDeviceProperties().getWidthPx() - side);
-            lp.height = lp.cellVSpan * splitRowHeight(getResources());
-            lp.x = mTmpSplitRect.centerX() - lp.width / 2;
-            lp.y = mTmpSplitRect.centerY() - lp.height / 2;
+        if (!lp.isLockedToGrid) {
             return;
         }
+        final int cellY = splitCellY(lp);
+        splitCellRect(cellY, lp.cellVSpan, mTmpSplitRect);
+        if (child instanceof NavigableAppWidgetHostView) {
+            mTmpSplitRect.inset(
+                    mActivity.getDeviceProfile().getWorkspaceProfile().getWidgetPadding());
+        }
+
         lp.x = mTmpSplitRect.left;
-        lp.width = mTmpSplitRect.width();
+        lp.width = Math.max(1, mTmpSplitRect.width());
         lp.y = mTmpSplitRect.top;
-        lp.height = mTmpSplitRect.height();
+        lp.height = Math.max(1, mTmpSplitRect.height());
     }
 
     private final android.graphics.Rect mTmpSplitRect = new android.graphics.Rect();
 
     /** Whether this page shows its rows in the two landscape columns of the list home. */
-    boolean isSplit() {
+    public boolean isSplit() {
         return mContainerType == WORKSPACE && mCountX == 1 && mCountY >= 2
                 && WheelHome.enabled(getContext())
                 && isWheelListSplit(mActivity.getDeviceProfile());
@@ -239,18 +249,27 @@ public class ShortcutAndWidgetContainer extends ViewGroup implements FolderIcon.
         final int gap = getResources().getDimensionPixelSize(R.dimen.r1_list_column_gap);
         final int columnWidth = splitColumnWidth();
         final int pitch = splitRowPitch();
-        final CellLayoutLayoutParams tall = findTallWidget();
-        if (tall != null) {
-            // A widget of more rows than a column holds is alone on the left, down to the
-            // bottom; the page's other rows stack down the right in their order, over the dock
-            final int top = tall.getCellY();
-            if (cellY >= top && cellY < top + tall.cellVSpan) {
-                out.set(0, 0, columnWidth, (half + 1) * pitch - mBorderSpace.y);
+        // A prospective drop must use the incoming span even before its view is on this page.
+        if (span > mCountY / 2 || cellY < half && cellY + span > half) {
+            final int rows = span > mCountY / 2 ? half + 1 : span;
+            out.set(0, 0, columnWidth, rows * pitch - mBorderSpace.y);
+            return;
+        }
+        final CellLayoutLayoutParams leftWidget = findLeftColumnWidget();
+        if (leftWidget != null) {
+            final int top = splitCellY(leftWidget);
+            if (cellY >= top && cellY < top + leftWidget.cellVSpan) {
+                final int height = splitWidgetHeight(leftWidget);
+                out.set(
+                        0,
+                        (cellY - top) * height / leftWidget.cellVSpan,
+                        columnWidth,
+                        (cellY - top + span) * height / leftWidget.cellVSpan);
                 return;
             }
-            final int index = cellY < top ? cellY : cellY - tall.cellVSpan;
+            final int index = cellY < top ? cellY : cellY - leftWidget.cellVSpan;
             final int y = index * pitch;
-            out.set(columnWidth + gap, y, 2 * columnWidth + gap, y + pitch - mBorderSpace.y);
+            out.set(columnWidth + gap, y, 2 * columnWidth + gap, y + span * pitch - mBorderSpace.y);
             return;
         }
         final int column = cellY >= half ? 1 : 0;
@@ -261,18 +280,50 @@ public class ShortcutAndWidgetContainer extends ViewGroup implements FolderIcon.
         out.set(x, y, x + columnWidth, y + span * pitch - mBorderSpace.y);
     }
 
-    /** The widget of this page of more rows than a landscape column holds, if there is one. */
-    private CellLayoutLayoutParams findTallWidget() {
+    private static int splitCellY(CellLayoutLayoutParams lp) {
+        return lp.useTmpCoords ? lp.getTmpCellY() : lp.getCellY();
+    }
+
+    private int splitWidgetHeight(CellLayoutLayoutParams lp) {
+        final int rows = lp.cellVSpan > mCountY / 2 ? (mCountY + 1) / 2 + 1 : lp.cellVSpan;
+        return rows * splitRowPitch() - mBorderSpace.y;
+    }
+
+    /** Also keep a shorter widget crossing the column break intact while resizing. */
+    private CellLayoutLayoutParams findLeftColumnWidget() {
         final int half = (mCountY + 1) / 2;
         for (int i = 0; i < getChildCount(); i++) {
             final View child = getChildAt(i);
             if (child instanceof NavigableAppWidgetHostView
                     && child.getLayoutParams() instanceof CellLayoutLayoutParams lp
-                    && lp.cellVSpan > half) {
+                    && (lp.cellVSpan > mCountY / 2
+                            || splitCellY(lp) < half && splitCellY(lp) + lp.cellVSpan > half)) {
                 return lp;
             }
         }
         return null;
+    }
+
+    private CellLayoutLayoutParams findTallWidget() {
+        final CellLayoutLayoutParams lp = findLeftColumnWidget();
+        return lp != null && lp.cellVSpan > mCountY / 2 ? lp : null;
+    }
+
+    /** The native split-widget size, also reported to providers for this device profile. */
+    public static android.util.Size splitWidgetSize(
+            DeviceProfile dp, android.content.res.Resources res, int spanY) {
+        final Rect slot = new Rect();
+        splitBottomSlot(dp, res, false, slot);
+        final Rect padding = dp.getWorkspaceProfile().getWidgetPadding();
+        final int rows = spanY > dp.inv.numRows / 2 ? (dp.inv.numRows + 1) / 2 + 1 : spanY;
+        return new android.util.Size(
+                Math.max(1, slot.width() - padding.left - padding.right),
+                Math.max(
+                        1,
+                        rows * splitRowPitch(dp, res)
+                                - dp.getWorkspaceProfile().getCellLayoutBorderSpacePx().y
+                                - padding.top
+                                - padding.bottom));
     }
 
     /** Whether a widget has the left landscape column of this page of the list home to itself. */
@@ -305,14 +356,22 @@ public class ShortcutAndWidgetContainer extends ViewGroup implements FolderIcon.
         final int half = (mCountY + 1) / 2;
         final int gap = getResources().getDimensionPixelSize(R.dimen.r1_list_column_gap);
         final int column = x >= splitColumnWidth() + gap / 2 ? 1 : 0;
-        final CellLayoutLayoutParams tall = findTallWidget();
+        final CellLayoutLayoutParams tall = findLeftColumnWidget();
         if (tall != null) {
-            final int top = tall.getCellY();
+            final int top = splitCellY(tall);
             final int others = mCountY - tall.cellVSpan;
-            if (column == 0 || others <= 0) return top;
+            if (column == 0 || others <= 0) {
+                return top
+                        + Math.max(
+                                0,
+                                Math.min(
+                                        tall.cellVSpan - 1,
+                                        y * tall.cellVSpan / Math.max(1, splitWidgetHeight(tall))));
+            }
             final int index = Math.max(0, Math.min(others - 1, y / splitRowPitch()));
             return index < top ? index : index + tall.cellVSpan;
         }
+
         final int row = Math.max(0, Math.min(half - 1, y / splitRowPitch()));
         return Math.min(mCountY - 1, column * half + row);
     }
@@ -396,6 +455,61 @@ public class ShortcutAndWidgetContainer extends ViewGroup implements FolderIcon.
         Trace.endSection();
     }
 
+    /** The tall widget first, then right-column items in their logical order. */
+    View splitFocusEnd(boolean last) {
+        final ArrayList<View> items = splitFocusItems();
+        return items.isEmpty() ? null : items.get(last ? items.size() - 1 : 0);
+    }
+
+    private ArrayList<View> splitFocusItems() {
+        final ArrayList<View> items = new ArrayList<>();
+        final CellLayoutLayoutParams tall = findTallWidget();
+        for (int i = 0; i < getChildCount(); i++) {
+            final View child = getChildAt(i);
+            if (child.getVisibility() == VISIBLE && child.isFocusable()) {
+                items.add(child);
+            }
+        }
+        items.sort(
+                Comparator.comparingInt(
+                        child ->
+                                child.getLayoutParams() == tall
+                                        ? -1
+                                        : splitCellY(
+                                                (CellLayoutLayoutParams) child.getLayoutParams())));
+        return items;
+    }
+
+    @Override
+    public View focusSearch(View focused, int direction) {
+        if (hasTallWidget()
+                && WheelHome.wheelFocus(getContext())
+                && focused != null
+                && focused.getParent() == this
+                && (direction == FOCUS_DOWN
+                        || direction == FOCUS_UP
+                        || direction == FOCUS_LEFT
+                        || direction == FOCUS_RIGHT)) {
+            final ArrayList<View> items = splitFocusItems();
+            final int index = items.indexOf(focused);
+            final boolean forward = direction == FOCUS_DOWN || direction == FOCUS_RIGHT;
+            final int next = index + (forward ? 1 : -1);
+            if (index >= 0 && next >= 0 && next < items.size()) {
+                return items.get(next);
+            }
+            if (direction == FOCUS_UP && index == 0 && mActivity instanceof Launcher launcher) {
+                final View tabs = launcher.findViewById(R.id.wheel_home_tabs);
+                if (tabs != null && tabs.isShown() && tabs.isFocusable()) return tabs;
+            }
+            if (direction == FOCUS_DOWN && mActivity instanceof Launcher launcher) {
+                final View dock = launcher.getHotseat().getShortcutsAndWidgets().getChildAt(0);
+                if (dock != null && dock.isShown() && dock.isFocusable()) return dock;
+            }
+            if (direction == FOCUS_LEFT || direction == FOCUS_RIGHT) return null;
+        }
+        return super.focusSearch(focused, direction);
+    }
+
     /**
      * Core logic to layout a child for this ViewGroup.
      */
@@ -415,13 +529,9 @@ public class ShortcutAndWidgetContainer extends ViewGroup implements FolderIcon.
             nahv.getTranslateDelegate().setTranslation(INDEX_WIDGET_CENTERING,
                     -(lp.width - (lp.width * scaleX)) / 2.0f,
                     -(lp.height - (lp.height * scaleY)) / 2.0f);
-            if (isSplit() && findTallWidget() == lp) {
-                // At its portrait size around the middle of the left column (splitForLandscape):
-                // scaled about that middle to fit the column, its proportions kept
-                splitCellRect(lp.getCellY(), lp.cellVSpan, mTmpSplitRect);
-                nahv.setScaleToFit(Math.min(1f, Math.min(
-                        mTmpSplitRect.width() / (float) lp.width,
-                        mTmpSplitRect.height() / (float) lp.height)));
+            if (isSplit()) {
+                // Split widgets lay out at their visible size; no portrait-shaped scaled surface.
+                nahv.setScaleToFit(1f);
                 nahv.getTranslateDelegate().setTranslation(INDEX_WIDGET_CENTERING, 0f, 0f);
             }
         }
