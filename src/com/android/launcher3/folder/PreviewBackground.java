@@ -44,7 +44,9 @@ import android.view.animation.Interpolator;
 import androidx.annotation.VisibleForTesting;
 
 import com.android.launcher3.CellLayout;
+import com.android.launcher3.BubbleTextView;
 import com.android.launcher3.DeviceProfile;
+import com.android.launcher3.WheelHome;
 import com.android.launcher3.Flags;
 import com.android.launcher3.R;
 import com.android.launcher3.celllayout.DelegatedCellDrawing;
@@ -193,6 +195,36 @@ public class PreviewBackground extends DelegatedCellDrawing {
         }
 
         invalidate();
+    }
+
+    /**
+     * Sets the circle up on the view it belongs to. On the r1's list home that is a row with
+     * its icon at the start and centred in its height, not a cell with the icon in the middle
+     * at the top: placed for a cell, the circle a drag over a row showed sat in the middle of
+     * the tile, away from the icon it was about.
+     */
+    public void setup(Context context, ActivityContext activity, View invalidateDelegate,
+            View row) {
+        setup(context, activity, invalidateDelegate, row.getMeasuredWidth(), row.getPaddingTop());
+        DeviceProfile grid = activity.getDeviceProfile();
+        if (!WheelHome.enabled(context) || grid.inv.numColumns != 1
+                || row.getMeasuredHeight() == 0) {
+            return;
+        }
+        int iconSize = grid.getWorkspaceProfile().getIconSizePx();
+        final int left;
+        if (row instanceof FolderIcon folder) {
+            left = folder.getListRowIconLeft();
+        } else if (row instanceof BubbleTextView icon) {
+            Rect bounds = new Rect();
+            iconSize = icon.getIconSize();
+            icon.getIconBounds(iconSize, bounds);
+            left = bounds.left;
+        } else {
+            return;
+        }
+        basePreviewOffsetX = left + (iconSize - previewSize) / 2;
+        basePreviewOffsetY = (row.getMeasuredHeight() - previewSize) / 2;
     }
 
     void getBounds(Rect outBounds) {

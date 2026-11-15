@@ -637,6 +637,11 @@ public class Launcher extends StatefulActivity<LauncherState>
             if (!initDeviceProfile(mDeviceProfile.inv)) {
                 return;
             }
+            // Every icon is bound again below. A drag held across that would drop into a page
+            // laid out for the other orientation, onto views that are gone
+            if (mDragController != null && mDragController.isDragging()) {
+                mDragController.cancelDrag();
+            }
             dispatchDeviceProfileChanged();
             reapplyUi();
             mDragLayer.recreateControllers();

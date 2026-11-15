@@ -1896,8 +1896,22 @@ public class Workspace<T extends View & PageIndicator> extends PagedView<T>
         if (draggableView != null) {
             draggableView.getSourceVisualDragBounds(dragRect);
             dragLayerY += dragRect.top;
+            // The preview was centred on the view, which is where a grid's icon is. A list row
+            // has its icon at the start of a wide tile and is picked up anywhere along it: the
+            // picture goes under the finger, since the drop goes by where the picture is and a
+            // picture left half a tile from the finger dropped in a place nobody pointed at.
+            if (!dragRect.isEmpty() && contentView == null
+                    && WheelHome.enabled(getContext())
+                    && mLauncher.getDeviceProfile().inv.numColumns == 1) {
+                dragLayerX += Math.round(scale * (dragRect.centerX() - child.getWidth() / 2f));
+                if (!dragOptions.isAccessibleDrag && dragOptions.simulatedDndStartPoint == null) {
+                    int[] at = new int[2];
+                    mLauncher.getDragLayer().getLocationInDragLayer(child, at);
+                    dragLayerX += mDragController.getDownPoint().x
+                            - Math.round(at[0] + scale * dragRect.centerX());
+                }
+            }
         }
-
 
         if (child.getParent() instanceof ShortcutAndWidgetContainer) {
             mDragSourceInternal = (ShortcutAndWidgetContainer) child.getParent();
@@ -2998,8 +3012,7 @@ public class Workspace<T extends View & PageIndicator> extends PagedView<T>
                 mMSDLPlayerWrapper.playToken(MSDLToken.DRAG_INDICATOR_DISCRETE);
             }
             mFolderCreateBg = new PreviewBackground(getContext());
-            mFolderCreateBg.setup(mLauncher, mLauncher, null,
-                    mDragOverView.getMeasuredWidth(), mDragOverView.getPaddingTop());
+            mFolderCreateBg.setup(mLauncher, mLauncher, null, mDragOverView);
 
             // The full preview background should appear behind the icon
             mFolderCreateBg.isClipping = false;
@@ -3029,8 +3042,7 @@ public class Workspace<T extends View & PageIndicator> extends PagedView<T>
             } else if (enableFileSystemFoldersAsDropTargets()) {
                 mFolderAddBg = new PreviewBackground(getContext());
                 mFolderAddBg.setup(
-                        mLauncher, mLauncher, /*invalidateDelegate=*/ null,
-                        mDragOverView.getMeasuredWidth(), mDragOverView.getPaddingTop());
+                        mLauncher, mLauncher, /*invalidateDelegate=*/ null, mDragOverView);
                 mFolderAddBg.isClipping = false;
                 mFolderAddBg.animateToAccept(mDragTargetLayout, mTargetCell[0], mTargetCell[1]);
             }

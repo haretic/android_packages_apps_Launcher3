@@ -697,8 +697,7 @@ public class CellLayout extends ViewGroup {
 
     public void setFolderLeaveBehindCell(int x, int y) {
         View child = getChildAt(x, y);
-        mFolderLeaveBehind.setup(getContext(), mActivity, null,
-                child.getMeasuredWidth(), child.getPaddingTop());
+        mFolderLeaveBehind.setup(getContext(), mActivity, null, child);
 
         mFolderLeaveBehind.mDelegateCellX = x;
         mFolderLeaveBehind.mDelegateCellY = y;
@@ -958,7 +957,37 @@ public class CellLayout extends ViewGroup {
         float iconVisibleRadius = ICON_VISIBLE_AREA_FACTOR
                 * grid.getWorkspaceProfile().getIconSizePx() / 2;
         // Halfway between reorder radius and icon.
-        return (getReorderRadius(targetCell, 1, 1) + iconVisibleRadius) / 2;
+        return (getIconReorderRadius(targetCell) + iconVisibleRadius) / 2;
+    }
+
+    /**
+     * The circle around an icon's visual centre that fits in its cell: outside it a drag over
+     * the icon reorders instead of making a folder.
+     */
+    private float getIconReorderRadius(int[] targetCell) {
+        int[] centerPoint = mTmpPoint;
+        getWorkspaceCellVisualCenter(targetCell[0], targetCell[1], centerPoint);
+
+        Rect cellBoundsWithSpacing = mTempRect;
+        cellToRect(targetCell[0], targetCell[1], 1, 1, cellBoundsWithSpacing);
+        cellBoundsWithSpacing.inset(-mBorderSpace.x / 2, -mBorderSpace.y / 2);
+
+        // Take only the circle in the smaller dimension, to ensure we don't start reordering
+        // too soon before accepting a folder drop.
+        int minRadius = centerPoint[0] - cellBoundsWithSpacing.left;
+        minRadius = Math.min(minRadius, centerPoint[1] - cellBoundsWithSpacing.top);
+        minRadius = Math.min(minRadius, cellBoundsWithSpacing.right - centerPoint[0]);
+        minRadius = Math.min(minRadius, cellBoundsWithSpacing.bottom - centerPoint[1]);
+        return minRadius;
+    }
+
+    /**
+     * Whether the cells are the wide rows of the wheel's list home: an icon at the start of a
+     * tile several times its width.
+     */
+    private boolean hasListRows() {
+        return mContainerType != FOLDER && WheelHome.enabled(getContext())
+                && mActivity.getDeviceProfile().inv.numColumns == 1;
     }
 
     /**
@@ -973,13 +1002,15 @@ public class CellLayout extends ViewGroup {
         cellBoundsWithSpacing.inset(-mBorderSpace.x / 2, -mBorderSpace.y / 2);
 
         if (canCreateFolder(getChildAt(targetCell[0], targetCell[1])) && spanX == 1 && spanY == 1) {
-            // Take only the circle in the smaller dimension, to ensure we don't start reordering
-            // too soon before accepting a folder drop.
-            int minRadius = centerPoint[0] - cellBoundsWithSpacing.left;
-            minRadius = Math.min(minRadius, centerPoint[1] - cellBoundsWithSpacing.top);
-            minRadius = Math.min(minRadius, cellBoundsWithSpacing.right - centerPoint[0]);
-            minRadius = Math.min(minRadius, cellBoundsWithSpacing.bottom - centerPoint[1]);
-            return minRadius;
+            if (hasListRows()) {
+                // A list row's visual centre is its icon, at the start of the tile. The circle
+                // that fits around it leaves most of the tile outside: a drag held there showed
+                // no preview at all, and the drop then reordered to a place nothing had shown.
+                // The whole row past the folder circle previews the reorder.
+                return (float) Math.hypot(cellBoundsWithSpacing.width(),
+                        cellBoundsWithSpacing.height());
+            }
+            return getIconReorderRadius(targetCell);
         }
         // Take up the entire cell, including space between this cell and the adjacent ones.
         // Multiply by span to scale radius
@@ -1195,6 +1226,7 @@ public class CellLayout extends ViewGroup {
             mDragCell[1] = cellY;
             mDragCellSpan[0] = spanX;
             mDragCellSpan[1] = spanY;
+            mShortcutsAndWidgets.setSplitDrop(cellY, spanY);
 
             final int oldIndex = mDragOutlineCurrent;
             mDragOutlineAnims[oldIndex].animateOut();
@@ -1252,6 +1284,7 @@ public class CellLayout extends ViewGroup {
         final int oldIndex = mDragOutlineCurrent;
         mDragOutlineAnims[oldIndex].animateOut();
         mDragCell[0] = mDragCell[1] = -1;
+        mShortcutsAndWidgets.setSplitDrop(-1, 0);
     }
 
     /**
@@ -1758,6 +1791,8 @@ public class CellLayout extends ViewGroup {
                 copySolutionToTempState(solution, dragView);
             }
             setItemPlacementDirty(true);
+            // Before the others are sent to their places around it
+            mShortcutsAndWidgets.setSplitDrop(solution.cellY, solution.spanY);
             animateItemsToSolution(solution, dragView, mode == MODE_ON_DROP);
 
             if (!DESTRUCTIVE_REORDER
@@ -1854,6 +1889,7 @@ public class CellLayout extends ViewGroup {
         mDragCellSpan[0] = mDragCellSpan[1] = -1;
         mDragOutlineAnims[mDragOutlineCurrent].animateOut();
         mDragOutlineCurrent = (mDragOutlineCurrent + 1) % mDragOutlineAnims.length;
+        mShortcutsAndWidgets.setSplitDrop(-1, 0);
         revertTempState();
         setIsDragOverlapping(false);
     }
@@ -1867,6 +1903,7 @@ public class CellLayout extends ViewGroup {
      */
     void onDropChild(View child) {
         mPlayDragHaptics = false;
+        mShortcutsAndWidgets.setSplitDrop(-1, 0);
         if (child != null) {
             CellLayoutLayoutParams
                     lp = (CellLayoutLayoutParams) child.getLayoutParams();

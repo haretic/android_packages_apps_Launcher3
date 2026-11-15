@@ -267,8 +267,11 @@ public class ShortcutAndWidgetContainer extends ViewGroup implements FolderIcon.
                         (cellY - top + span) * height / leftWidget.cellVSpan);
                 return;
             }
-            final int index = cellY < top ? cellY : cellY - leftWidget.cellVSpan;
-            final int y = index * pitch;
+            // The rows above the widget from the top, the rows below it up from the bottom:
+            // a row that is the dock's neighbour under the widget in portrait stays its
+            // neighbour here, not at the top with a hole between them
+            final int index = cellY < top ? cellY : half - (mCountY - cellY);
+            final int y = Math.max(0, index) * pitch;
             out.set(columnWidth + gap, y, 2 * columnWidth + gap, y + span * pitch - mBorderSpace.y);
             return;
         }
@@ -289,11 +292,44 @@ public class ShortcutAndWidgetContainer extends ViewGroup implements FolderIcon.
         return rows * splitRowPitch() - mBorderSpace.y;
     }
 
+    // Where a drag would drop on this page, while the page shows it: its row and rows
+    private int mSplitDropCellY = -1;
+    private int mSplitDropSpan;
+    private final CellLayoutLayoutParams mSplitDropLp = new CellLayoutLayoutParams(0, 0, 1, 1);
+
+    /**
+     * Says where a drag would drop on this page, -1 for nowhere. A widget that would take the
+     * left landscape column decides where every other row shows. Its own view still holds the
+     * cell it was picked up from, so without this the rows around a dragged widget were
+     * previewed for the place it had left and jumped to the other column on the drop.
+     */
+    void setSplitDrop(int cellY, int span) {
+        if (cellY == mSplitDropCellY && span == mSplitDropSpan) {
+            return;
+        }
+        mSplitDropCellY = cellY;
+        mSplitDropSpan = span;
+        if (isSplit()) {
+            requestLayout();
+        }
+    }
+
     /** Also keep a shorter widget crossing the column break intact while resizing. */
     private CellLayoutLayoutParams findLeftColumnWidget() {
         final int half = (mCountY + 1) / 2;
+        if (mSplitDropCellY >= 0 && (mSplitDropSpan > mCountY / 2
+                || mSplitDropCellY < half && mSplitDropCellY + mSplitDropSpan > half)) {
+            mSplitDropLp.setCellY(mSplitDropCellY);
+            mSplitDropLp.cellVSpan = mSplitDropSpan;
+            return mSplitDropLp;
+        }
         for (int i = 0; i < getChildCount(); i++) {
             final View child = getChildAt(i);
+            if (mSplitDropCellY >= 0 && child.getVisibility() != VISIBLE) {
+                // The one being dragged, hidden where it was picked up: the drop says where
+                // it goes
+                continue;
+            }
             if (child instanceof NavigableAppWidgetHostView
                     && child.getLayoutParams() instanceof CellLayoutLayoutParams lp
                     && (lp.cellVSpan > mCountY / 2
@@ -368,8 +404,17 @@ public class ShortcutAndWidgetContainer extends ViewGroup implements FolderIcon.
                                         tall.cellVSpan - 1,
                                         y * tall.cellVSpan / Math.max(1, splitWidgetHeight(tall))));
             }
-            final int index = Math.max(0, Math.min(others - 1, y / splitRowPitch()));
-            return index < top ? index : index + tall.cellVSpan;
+            // The inverse of splitCellRect: slots from the top are the rows above the widget,
+            // slots up from the bottom the rows below it, a slot between them the nearer row
+            final int below = mCountY - top - tall.cellVSpan;
+            final int index = Math.max(0, Math.min(half - 1, y / splitRowPitch()));
+            if (index < top) {
+                return index;
+            }
+            if (below > 0) {
+                return mCountY - Math.max(1, Math.min(below, half - index));
+            }
+            return top - 1;
         }
 
         final int row = Math.max(0, Math.min(half - 1, y / splitRowPitch()));
@@ -423,6 +468,11 @@ public class ShortcutAndWidgetContainer extends ViewGroup implements FolderIcon.
                     && child instanceof BubbleTextView) {
                 int inset = getResources().getDimensionPixelSize(R.dimen.r1_list_row_padding);
                 child.setPadding(inset, 0, inset, 0);
+            } else if (WheelHome.enabled(getContext())
+                    && dp.inv.numColumns == 1
+                    && child instanceof com.android.launcher3.folder.FolderIcon folder) {
+                folder.setListRowInset(
+                        getResources().getDimensionPixelSize(R.dimen.r1_list_row_padding));
             } else {
                 child.setPadding(cellPaddingX, cellPaddingY, cellPaddingX, 0);
             }

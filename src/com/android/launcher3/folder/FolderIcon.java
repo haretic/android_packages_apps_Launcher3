@@ -60,6 +60,7 @@ import com.android.launcher3.OnAlarmListener;
 import com.android.launcher3.R;
 import com.android.launcher3.Reorderable;
 import com.android.launcher3.Utilities;
+import com.android.launcher3.WheelHome;
 import com.android.launcher3.Workspace;
 import com.android.launcher3.allapps.ActivityAllAppsContainerView;
 import com.android.launcher3.anim.AnimatedFloat;
@@ -126,6 +127,9 @@ public class FolderIcon extends FrameLayout implements FloatingIconViewCompanion
     private static final int ON_OPEN_DELAY = 800;
 
     @Thunk BubbleTextView mFolderName;
+    // A row of the r1's list home, and how far its content stands in from the tile's ends
+    private boolean mListRow;
+    private int mListRowInset;
 
     PreviewBackground mBackground = new PreviewBackground(getContext());
     private boolean mBackgroundIsVisible = true;
@@ -231,7 +235,9 @@ public class FolderIcon extends FrameLayout implements FloatingIconViewCompanion
         }
         icon.mFolderName.setCompoundDrawablePadding(0);
         FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) icon.mFolderName.getLayoutParams();
-        lp.topMargin = grid.getWorkspaceProfile().getIconSizePx()
+        icon.mListRow = WheelHome.enabled(icon.getContext()) && grid.inv.numColumns == 1;
+        // A list row: the name fills the tile beside the circle, not a line under it
+        lp.topMargin = icon.mListRow ? 0 : grid.getWorkspaceProfile().getIconSizePx()
                 + grid.getWorkspaceProfile().getIconDrawablePaddingPx();
 
         icon.setTag(folderInfo);
@@ -253,6 +259,26 @@ public class FolderIcon extends FrameLayout implements FloatingIconViewCompanion
         icon.updatePreviewItems(false);
 
         return icon;
+    }
+
+    /**
+     * Lays this out as a row of the r1's list home: the tile is the name's, edge to edge, and
+     * the circle stands at its start where an app's icon would, the name beside it.
+     */
+    public void setListRowInset(int inset) {
+        mListRowInset = inset;
+        setPadding(0, 0, 0, 0);
+        mFolderName.setPaddingRelative(
+                inset + mActivity.getDeviceProfile().getWorkspaceProfile().getIconSizePx()
+                        + getResources().getDimensionPixelSize(R.dimen.r1_list_row_gap),
+                0, inset, 0);
+    }
+
+    /** Where a row's icon starts, from the left of this view. */
+    public int getListRowIconLeft() {
+        int iconSize = mActivity.getDeviceProfile().getWorkspaceProfile().getIconSizePx();
+        return Utilities.isRtl(getResources())
+                ? getMeasuredWidth() - mListRowInset - iconSize : mListRowInset;
     }
 
     public void animateBgShadowAndStroke() {
@@ -659,6 +685,9 @@ public class FolderIcon extends FrameLayout implements FloatingIconViewCompanion
             iconBounds.right = iconBounds.left + iconSize;
             iconBounds.top = getPaddingTop();
             iconBounds.bottom = iconBounds.top + iconSize;
+            if (mListRow) {
+                iconBounds.offsetTo(getListRowIconLeft(), (getHeight() - iconSize) / 2);
+            }
 
             float iconScale = (float) mBackground.previewSize / iconSize;
             Utilities.scaleRectAboutCenter(iconBounds, iconScale);
@@ -673,7 +702,7 @@ public class FolderIcon extends FrameLayout implements FloatingIconViewCompanion
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         boolean shouldCenterIcon = mActivity.getDeviceProfile().getWorkspaceProfile()
                 .getIconCenterVertically();
-        if (shouldCenterIcon) {
+        if (shouldCenterIcon && !mListRow) {
             int iconSize = mActivity.getDeviceProfile().getWorkspaceProfile().getIconSizePx();
             Paint.FontMetrics fm = mFolderName.getPaint().getFontMetrics();
             int cellHeightPx = iconSize + mFolderName.getCompoundDrawablePadding()

@@ -95,6 +95,8 @@ public class PreviewItemManager {
     private float mIntrinsicIconSize = -1;
     private int mTotalWidth = -1;
     private int mPrevTopPadding = -1;
+    // A list row centres the circle in its height
+    private int mPrevHeight = -1;
     private Drawable mReferenceDrawable = null;
 
     private int mNumOfPrevItems = 0;
@@ -158,13 +160,14 @@ public class PreviewItemManager {
 
     private void computePreviewDrawingParams(int drawableSize, int totalSize) {
         if (mIntrinsicIconSize != drawableSize || mTotalWidth != totalSize ||
-                mPrevTopPadding != mIcon.getPaddingTop()) {
+                mPrevTopPadding != mIcon.getPaddingTop()
+                || mPrevHeight != mIcon.getMeasuredHeight()) {
+            mPrevHeight = mIcon.getMeasuredHeight();
             mIntrinsicIconSize = drawableSize;
             mTotalWidth = totalSize;
             mPrevTopPadding = mIcon.getPaddingTop();
 
-            mIcon.mBackground.setup(mIcon.getContext(), mIcon.mActivity, mIcon, mTotalWidth,
-                    mIcon.getPaddingTop());
+            mIcon.mBackground.setup(mIcon.getContext(), mIcon.mActivity, mIcon, mIcon);
             mIcon.mPreviewLayoutRule.init(
                     mIcon.mBackground.previewSize, mIntrinsicIconSize,
                     Utilities.isRtl(mIcon.getResources()),
