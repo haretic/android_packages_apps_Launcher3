@@ -10,6 +10,7 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.Rect;
 import android.graphics.RectF;
+import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Process;
 import android.os.UserHandle;
@@ -96,7 +97,10 @@ public class WheelHomeTabs extends View implements Insettable, PagedView.PageSwi
         mTouchSlop = ViewConfiguration.get(context).getScaledTouchSlop();
         mFling = new OverScroller(context);
         mText.setTextAlign(Paint.Align.CENTER);
-        mText.setTextSize(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 16,
+        // haretic's display face, which runs wide: 11.5sp of it is as long as 16sp of the text face
+        mText.setTypeface(Typeface.create("haretic-display", Typeface.NORMAL));
+        mText.setLetterSpacing(0.02f);
+        mText.setTextSize(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 11.5f,
                 getResources().getDisplayMetrics()));
         mPill.setColor(context.getColor(android.R.color.system_primary_dark));
         final int pad = dp(4);

@@ -105,6 +105,7 @@ import android.animation.Animator;
 import android.animation.AnimatorSet;
 import android.animation.ValueAnimator;
 import android.annotation.TargetApi;
+import android.app.WallpaperManager;
 import android.appwidget.AppWidgetHostView;
 import android.appwidget.AppWidgetManager;
 import android.content.ActivityNotFoundException;
@@ -268,6 +269,10 @@ import java.util.stream.Stream;
 public class Launcher extends StatefulActivity<LauncherState>
         implements InvariantDeviceProfile.OnIDPChangeListener {
     public static final String TAG = "Launcher";
+
+    /** A living wallpaper's cue that the wheel stepped: x is 1 on or down, -1 back or up. */
+    private static final String WALLPAPER_COMMAND_WHEEL_STEP =
+            "org.haretic.wallpaper.WHEEL_STEP";
 
     public static final ContextTracker.ActivityTracker<Launcher> ACTIVITY_TRACKER =
             new ContextTracker.ActivityTracker<>();
@@ -1902,8 +1907,38 @@ public class Launcher extends StatefulActivity<LauncherState>
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
         TestLogging.recordKeyEvent(TestProtocol.SEQUENCE_MAIN, "Key event", event);
+        tellWallpaperOfWheelStep(event);
         return (event.getKeyCode() == KeyEvent.KEYCODE_HOME) || tryHandleEscapeKey(event)
                     || super.dispatchKeyEvent(event);
+    }
+
+    /**
+     * A step of the wheel, which comes to home as a key, passed on to the wallpaper home shows:
+     * keys never reach a wallpaper, and a living one stirs with the wheel. One that does not
+     * know the command ignores it.
+     */
+    private void tellWallpaperOfWheelStep(KeyEvent event) {
+        if (event.getAction() != KeyEvent.ACTION_DOWN) {
+            return;
+        }
+        final int step;
+        switch (event.getKeyCode()) {
+            case KeyEvent.KEYCODE_DPAD_DOWN:
+            case KeyEvent.KEYCODE_NAVIGATE_NEXT:
+                step = 1;
+                break;
+            case KeyEvent.KEYCODE_DPAD_UP:
+            case KeyEvent.KEYCODE_NAVIGATE_PREVIOUS:
+                step = -1;
+                break;
+            default:
+                return;
+        }
+        final View decor = getWindow().peekDecorView();
+        if (decor != null && decor.getWindowToken() != null) {
+            WallpaperManager.getInstance(this).sendWallpaperCommand(
+                    decor.getWindowToken(), WALLPAPER_COMMAND_WHEEL_STEP, step, 0, 0, null);
+        }
     }
 
     /**

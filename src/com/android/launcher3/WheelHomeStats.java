@@ -119,7 +119,9 @@ public class WheelHomeStats extends View implements Insettable, PagedView.PageSw
         mLabel.setTextSize(11 * density);
         mValue.setColor(mOnSurface);
         mValue.setTextSize(21 * density);
-        mValue.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        mValue.setTypeface(Typeface.create("haretic-text-medium", Typeface.NORMAL));
+        // Figures of one width, so a value that counts does not shift what is beside it
+        mValue.setFontFeatureSettings("tnum");
         mExtra.setColor(context.getColor(android.R.color.system_on_surface_variant_dark));
         mExtra.setTextSize(11 * density);
         setFocusable(false);
