@@ -1626,8 +1626,20 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
             mRecyclerView.setLayoutManager(mLayoutManager);
             mRecyclerView.setAdapter(mAdapter);
             mRecyclerView.setHasFixedSize(true);
-            // No animations will occur when changes occur to the items in this RecyclerView.
-            mRecyclerView.setItemAnimator(null);
+            if (isSearch()) {
+                // No animations will occur when changes occur to the items in this RecyclerView.
+                mRecyclerView.setItemAnimator(null);
+            } else {
+                // An app hidden, shown again, installed or removed: its row fades and the rest
+                // closes up or makes room. Icons and labels that only change do not blink.
+                final androidx.recyclerview.widget.DefaultItemAnimator rows =
+                        new androidx.recyclerview.widget.DefaultItemAnimator();
+                rows.setSupportsChangeAnimations(false);
+                rows.setRemoveDuration(140);
+                rows.setAddDuration(180);
+                rows.setMoveDuration(220);
+                mRecyclerView.setItemAnimator(rows);
+            }
             onInitializeRecyclerView(mRecyclerView);
             // Use ViewGroupFocusHelper for SearchRecyclerView to draw focus outline for the
             // buttons in the view (e.g. query builder button and setting button)

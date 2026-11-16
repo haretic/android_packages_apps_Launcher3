@@ -13,6 +13,9 @@ import static com.android.launcher3.testing.shared.ResourceUtils.INVALID_RESOURC
 
 import android.content.ComponentName;
 import android.content.Context;
+import static com.android.launcher3.util.Executors.MODEL_EXECUTOR;
+
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ShortcutInfo;
 import android.graphics.Rect;
@@ -30,6 +33,9 @@ import androidx.annotation.Nullable;
 import com.android.launcher3.AbstractFloatingView;
 import com.android.launcher3.AbstractFloatingViewHelper;
 import com.android.launcher3.DropTargetHandler;
+import com.android.launcher3.LauncherAppState;
+import com.android.launcher3.lineage.trust.db.TrustDatabaseHelper;
+import com.android.launcher3.model.tasks.PackageUpdatedTask;
 import com.android.launcher3.Flags;
 import com.android.launcher3.LauncherModel;
 import com.android.launcher3.LauncherSettings;
@@ -288,6 +294,51 @@ public abstract class SystemShortcut<T extends ActivityContext> extends ItemInfo
         }
     }
 
+
+    /** Takes the app out of the app drawer; Home settings and the snackbar bring it back. */
+    public static final Factory<ActivityContext> HIDE_APP = (context, itemInfo, originalView) -> {
+        final String pkg = itemInfo.getTargetPackage();
+        if (pkg == null || pkg.equals(originalView.getContext().getPackageName())
+                || !Process.myUserHandle().equals(itemInfo.user)) {
+            return null;
+        }
+        return new HideApp<>(context, itemInfo, originalView);
+    };
+
+    private static class HideApp<T extends ActivityContext> extends SystemShortcut<T> {
+
+        HideApp(T target, ItemInfo itemInfo, @NonNull View originalView) {
+            super(R.drawable.ic_hide_app, R.string.hide_app_shortcut_label, target, itemInfo,
+                    originalView, false);
+        }
+
+        @Override
+        public void onClick(View view) {
+            final Context context = view.getContext().getApplicationContext();
+            final String pkg = mItemInfo.getTargetPackage();
+            final UserHandle user = mItemInfo.user;
+            AbstractFloatingView.closeAllOpenViews(mTarget);
+            setHidden(context, pkg, user, true);
+            Snackbar.show(mTarget, context.getString(R.string.hide_app_done, mItemInfo.title),
+                    R.string.undo, null, () -> setHidden(context, pkg, user, false));
+        }
+
+        /** Written off the main thread, then the one package looked at again: the drawer's
+         *  list loses or gains the one row, and animates it. */
+        private static void setHidden(Context context, String pkg, UserHandle user,
+                boolean hidden) {
+            MODEL_EXECUTOR.execute(() -> {
+                final TrustDatabaseHelper db = TrustDatabaseHelper.getInstance(context);
+                if (hidden) {
+                    db.addHiddenApp(pkg);
+                } else {
+                    db.removeHiddenApp(pkg);
+                }
+                LauncherAppState.INSTANCE.get(context).getModel().enqueueModelUpdateTask(
+                        new PackageUpdatedTask(PackageUpdatedTask.OP_UPDATE, user, pkg));
+            });
+        }
+    }
 
     public static final Factory<ActivityContext> ADD_TO_HOME_SCREEN =
             (activity, itemInfo, originalView) -> {

@@ -274,7 +274,10 @@ public class AllAppsList {
                 ComponentName cn = appInfo.getTargetComponent();
                 // Keep removing entries from the map, so that we are only left with missing entries
                 LauncherActivityInfo lai = activityMap.remove(cn);
-                if (lai == null) {
+                if (lai != null && !mAppFilter.shouldShowApp(cn)) {
+                    // Hidden since: out of the list, its icon kept for when it is shown again
+                    iterator.remove();
+                } else if (lai == null) {
                     // Remove any component which is no longer in the list
                     mIconCache.remove(cn, user);
                     iterator.remove();

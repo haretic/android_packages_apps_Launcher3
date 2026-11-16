@@ -2872,9 +2872,10 @@ public class Launcher extends StatefulActivity<LauncherState>
             boolean isPinnable = itemInfo instanceof ItemInfoWithIcon info
                     && (info.runtimeStatusFlags & FLAG_NOT_PINNABLE) == 0;
             if (isPinnable) {
-                return Stream.of(APP_INFO, WIDGETS, INSTALL, ADD_TO_HOME_SCREEN);
+                return Stream.of(APP_INFO, WIDGETS, INSTALL, ADD_TO_HOME_SCREEN,
+                        SystemShortcut.HIDE_APP);
             } else {
-                return Stream.of(APP_INFO, WIDGETS, INSTALL);
+                return Stream.of(APP_INFO, WIDGETS, INSTALL, SystemShortcut.HIDE_APP);
             }
         }
         return Stream.of(APP_INFO, WIDGETS, INSTALL);

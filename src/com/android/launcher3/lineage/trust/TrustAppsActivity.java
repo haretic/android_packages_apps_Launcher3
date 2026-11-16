@@ -48,6 +48,7 @@ import com.android.launcher3.R;
 import com.android.launcher3.lineage.LineageUtils;
 import com.android.launcher3.lineage.trust.db.TrustComponent;
 import com.android.launcher3.lineage.trust.db.TrustDatabaseHelper;
+import com.android.launcher3.model.tasks.PackageUpdatedTask;
 
 import java.util.List;
 
@@ -118,7 +119,10 @@ public class TrustAppsActivity extends Activity implements
 
     @Override
     public void onHiddenItemChanged(@NonNull TrustComponent component) {
-        new UpdateItemTask(mDbHelper, this, HIDDEN).execute(component);
+        final String pkg = component.getPackageName();
+        new UpdateItemTask(mDbHelper, result -> LauncherAppState.INSTANCE.get(this).getModel()
+                .enqueueModelUpdateTask(new PackageUpdatedTask(PackageUpdatedTask.OP_UPDATE,
+                        android.os.Process.myUserHandle(), pkg)), HIDDEN).execute(component);
     }
 
     @Override
