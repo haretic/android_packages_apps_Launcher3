@@ -179,6 +179,12 @@ public class RecentsOrientedState implements LauncherPrefChangeListener {
         mFlags |= FLAG_SWIPE_UP_NOT_RUNNING;
         mSettingsCache = SettingsCache.INSTANCE.get(mContext);
         initFlags();
+        if (mContext.getResources().getBoolean(com.android.launcher3.R.bool.config_allowRotation)) {
+            // Where home turns with the display (RotationHelper), recents is that same activity
+            // and turns too: laid out for the display as it is, not for a home that stayed
+            // upright, which put the cards and their chips sideways in landscape
+            mFlags |= FLAG_IGNORE_ALLOW_HOME_ROTATION_PREF;
+        }
     }
 
     public BaseContainerInterface getContainerInterface() {
