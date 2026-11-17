@@ -31,6 +31,7 @@ constructor(private val state: RecentsOrientedState) : RecentsRotationStateRepos
             RecentsRotationState(
                 activityRotation = recentsActivityRotation,
                 orientationHandlerRotation = orientationHandler.rotation,
+                activityTurnsWithDisplay = isRecentsActivityRotationAllowed,
             )
         }
 }

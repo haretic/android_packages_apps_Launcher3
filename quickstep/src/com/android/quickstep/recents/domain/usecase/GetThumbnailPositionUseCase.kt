@@ -48,13 +48,18 @@ constructor(
 
         val previewPositionHelper = previewPositionHelperProvider.get()
         previewPositionHelper.setSplitBounds(splitBounds, splitPosition)
+        val rotationState = rotationStateRepository.getRecentsRotationState()
         previewPositionHelper.updateThumbnailMatrix(
             Rect(0, 0, thumbnail.width, thumbnail.height),
             thumbnailData,
             width,
             height,
-            deviceProfileRepository.getRecentsDeviceProfile().isLargeScreen,
-            rotationStateRepository.getRecentsRotationState().activityRotation,
+            // A picture taken in the other orientation is turned only where recents stays
+            // upright while the device is turned. Where recents turns with the display, as on
+            // a large screen, the picture stays upright and is cropped to the card
+            deviceProfileRepository.getRecentsDeviceProfile().isLargeScreen ||
+                rotationState.activityTurnsWithDisplay,
+            rotationState.activityRotation,
             isRtl,
             densityDpi,
         )

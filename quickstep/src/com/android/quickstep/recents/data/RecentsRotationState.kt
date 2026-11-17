@@ -26,4 +26,6 @@ import android.view.Surface
 data class RecentsRotationState(
     @Surface.Rotation val activityRotation: Int,
     @Surface.Rotation val orientationHandlerRotation: Int,
+    /** Whether recents itself turns with the display, where it is not laid out sideways. */
+    val activityTurnsWithDisplay: Boolean = false,
 )
