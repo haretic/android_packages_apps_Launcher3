@@ -27,7 +27,9 @@ import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
 import android.content.Context;
 import android.content.res.Resources;
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
@@ -117,6 +119,9 @@ public abstract class ArrowPopup<T extends ActivityContext> extends AbstractFloa
     protected boolean shouldScaleArrow = false;
     protected boolean mIsArrowRotated = false;
 
+    // The panel's edge: its fill is as dark as the app drawer under it, where without an edge
+    // the menu's items stood loose among the app names
+    private final Paint mEdgePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final GradientDrawable mRoundedTop;
     private final GradientDrawable mRoundedBottom;
 
@@ -166,6 +171,10 @@ public abstract class ArrowPopup<T extends ActivityContext> extends AbstractFloa
                 smallerRadius, mOutlineRadius, mOutlineRadius, mOutlineRadius, mOutlineRadius});
 
         mIterateChildrenTag = getContext().getString(R.string.popup_container_iterate_children);
+
+        mEdgePaint.setStyle(Paint.Style.STROKE);
+        mEdgePaint.setStrokeWidth(resources.getDisplayMetrics().density);
+        mEdgePaint.setColor(Utilities.isDarkTheme(context) ? 0x33ffffff : 0x1f000000);
 
         if (mActivityContext.canUseMultipleShadesForPopup()) {
             mColors = new int[]{
@@ -754,5 +763,13 @@ public abstract class ArrowPopup<T extends ActivityContext> extends AbstractFloa
 
     protected BaseDragLayer getPopupContainer() {
         return mActivityContext.getDragLayer();
+    }
+
+    @Override
+    protected void dispatchDraw(Canvas canvas) {
+        super.dispatchDraw(canvas);
+        final float half = mEdgePaint.getStrokeWidth() / 2;
+        canvas.drawRoundRect(half, half, getWidth() - half, getHeight() - half,
+                mOutlineRadius, mOutlineRadius, mEdgePaint);
     }
 }
