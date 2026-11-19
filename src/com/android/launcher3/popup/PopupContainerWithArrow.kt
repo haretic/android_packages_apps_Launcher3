@@ -21,6 +21,7 @@ import android.content.Context
 import android.graphics.PointF
 import android.graphics.Typeface
 import android.os.Handler
+import android.view.FocusFinder
 import android.view.MotionEvent
 import android.view.View
 import android.view.View.OnClickListener
@@ -34,6 +35,7 @@ import com.android.launcher3.Flags
 import com.android.launcher3.Launcher
 import com.android.launcher3.R
 import com.android.launcher3.Utilities
+import com.android.launcher3.WheelHome
 import com.android.launcher3.dragndrop.DragController
 import com.android.launcher3.model.data.ItemInfo
 import com.android.launcher3.model.data.ItemInfoWithIcon
@@ -127,6 +129,15 @@ private constructor(
     }
 
     override fun requestFocusOnOpened(): Boolean {
+        // Opened from a key, as the wheel's side button held on an app: the focus straight onto
+        // the menu's first item, its ring there and the wheel's steps going on through the menu.
+        // The menu as a whole is no stop of its own (the wheel's ring shows on none)
+        if (!isInTouchMode && WheelHome.wheelFocus(context)) {
+            val first = FocusFinder.getInstance().findNextFocus(this, null, View.FOCUS_DOWN)
+            if (first != null && first !== this && first.requestFocus(View.FOCUS_DOWN)) {
+                return false
+            }
+        }
         return true
     }
 

@@ -408,6 +408,18 @@ public class WheelHomeTabs extends View implements Insettable, PagedView.PageSwi
             return;
         }
         final View focused = mLauncher.getWindow().getDecorView().findFocus();
+        // A menu or folder open over the screen, as an app's long-press menu a touch opened:
+        // the wheel goes into it, not onto the apps behind it
+        final AbstractFloatingView floating = AbstractFloatingView.getTopOpenViewWithType(
+                mLauncher, AbstractFloatingView.TYPE_FOLDER
+                        | AbstractFloatingView.TYPE_ACTION_POPUP
+                        | AbstractFloatingView.TYPE_OPTIONS_POPUP);
+        if (floating != null) {
+            if (!isInside(focused, floating)) {
+                floating.requestFocus(View.FOCUS_DOWN);
+            }
+            return;
+        }
         if (state == LauncherState.ALL_APPS) {
             final View apps = mLauncher.getAppsView().getActiveRecyclerView();
             // On an app or in the search field; the sheet's handle and the like don't count

@@ -1993,8 +1993,11 @@ public class Launcher extends StatefulActivity<LauncherState>
 
     protected void onStateBack() {
         // Home has no back: there the side button's hold (back, with the wheel UI) opens the
-        // options of what the wheel is on, a tab's or an app's
-        if (mStateManager.getState() == NORMAL && WheelHome.enabled(this)) {
+        // options of what the wheel is on, a tab's or an app's. In the app drawer too, on an
+        // app the wheel is on, as a long press there would; on its search field or with
+        // nothing focused the hold still closes the drawer
+        if ((mStateManager.getState() == NORMAL || mStateManager.getState() == ALL_APPS)
+                && WheelHome.enabled(this)) {
             final View focused = getWindow().getDecorView().findFocus();
             if (focused != null && !focused.isInTouchMode()) {
                 if (focused instanceof WheelHomeTabs tabs) {
