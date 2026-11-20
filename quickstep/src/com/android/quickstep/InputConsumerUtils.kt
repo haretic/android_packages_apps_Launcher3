@@ -27,7 +27,9 @@ import com.android.launcher3.statemanager.BaseState
 import com.android.launcher3.statemanager.StatefulContainer
 import com.android.launcher3.taskbar.TaskbarApiProxy
 import com.android.launcher3.taskbar.TaskbarManager
+import com.android.launcher3.taskbar.TaskbarManagerImpl
 import com.android.launcher3.util.LockedUserState.Companion.get
+import com.android.launcher3.util.SettingsCache
 import com.android.quickstep.inputconsumers.AccessibilityInputConsumer
 import com.android.quickstep.inputconsumers.AssistantInputConsumer
 import com.android.quickstep.inputconsumers.BubbleBarInputConsumer
@@ -820,8 +822,15 @@ object InputConsumerUtils {
         rotationTouchHelper: RotationTouchHelper,
     ): InputConsumer where T : RecentsViewContainer, T : StatefulContainer<S> {
         val containerInterface = gestureState.getContainerInterface<S, T>()
+        // With the gesture pill hidden nothing shows where the swipe region is, and apps lay
+        // their rows and buttons into it. A tap there that opens or closes a page then ran into
+        // the recents animation started at its down, which cancelled to Home: start it only
+        // once the finger has moved, as for a separate home app.
+        val pillHidden =
+            !SettingsCache.INSTANCE.get(context).getValue(TaskbarManagerImpl.NAVIGATION_BAR_HINT_URI)
         val shouldDefer =
             (!overviewComponentObserver.isHomeAndOverviewSame ||
+                pillHidden ||
                 containerInterface.deferStartingActivity(deviceState, event))
         val disableHorizontalSwipe =
             deviceState.isInExclusionRegion(event) &&
